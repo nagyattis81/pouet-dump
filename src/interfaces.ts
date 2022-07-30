@@ -2,6 +2,7 @@ export interface Prod {
   id: string;
   name: string;
   download: string;
+  types: string[];
 }
 
 export interface Party {
