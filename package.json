@@ -1,5 +1,5 @@
 {
-  "name": "@nagyattis81/pouet",
+  "name": "@nagyattis81/pouet-dump",
   "version": "1.0.0",
   "description": "pouet dump",
   "main": "lib/index.js",
