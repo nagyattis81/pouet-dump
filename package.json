@@ -1,0 +1,23 @@
+{
+  "name": "@aha/pouet",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nagyattis81/pouet.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nagyattis81/pouet/issues"
+  },
+  "homepage": "https://github.com/nagyattis81/pouet#readme",
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  }
+}
