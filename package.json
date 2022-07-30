@@ -1,6 +1,6 @@
 {
   "name": "@nagyattis81/pouet-dump",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "pouet dump",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -13,12 +13,11 @@
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags",
-    "publish": "npm publish --access public"
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nagyattis81/pouet.git"
+    "url": "git+https://github.com/nagyattis81/pouet-dump.git"
   },
   "keywords": [
     "pouet",
@@ -30,9 +29,9 @@
   "author": "Nagy Attila (aha)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/nagyattis81/pouet/issues"
+    "url": "https://github.com/nagyattis81/pouet-dump/issues"
   },
-  "homepage": "https://github.com/nagyattis81/pouet#readme",
+  "homepage": "https://github.com/nagyattis81/pouet-dump#readme",
   "devDependencies": {
     "@types/jest": "^28.1.6",
     "jest": "^28.1.3",
