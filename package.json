@@ -1,5 +1,5 @@
 {
-  "name": "@aha/pouet",
+  "name": "@nagyattis81/pouet",
   "version": "1.0.0",
   "description": "pouet dump",
   "main": "lib/index.js",
@@ -13,7 +13,8 @@
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "publish": "npm publish --access public"
   },
   "repository": {
     "type": "git",
