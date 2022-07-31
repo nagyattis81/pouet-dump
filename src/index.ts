@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { Prod, Dump, Dumps, Party, Group, Board } from './interfaces';
+import axios, { AxiosError } from 'axios';
+import { Prod, Dump, Dumps, Party, Group, Board, Error, User } from './interfaces';
 import { forkJoin, Observable } from 'rxjs';
 import * as zlib from 'zlib';
 import * as fs from 'fs';
@@ -31,6 +31,16 @@ const createDumpFromInfo = <T>(info: Info): Dump<T> => {
   };
 };
 
+const createEmptyDump = <T>(): Dump<T> => {
+  return {
+    filename: '',
+    url: '',
+    size_in_bytes: -1,
+    dump_date: '',
+    data: [],
+  };
+};
+
 function gunzipJson(data: any, info: Info): Observable<{ dump_date: string } | undefined> {
   return new Observable<any | undefined>((subscribe) => {
     zlib.gunzip(data, (_err: any, output: any) => {
@@ -49,31 +59,96 @@ function gunzipJson(data: any, info: Info): Observable<{ dump_date: string } | u
 }
 
 function setData(dumps: Dumps, prodsData: any, partiesData: any, groupsData: any, boardsData: any) {
+  const handleUser = (user: User) => {
+    user.glops = Number(user.glops);
+    if (dumps.users.find((find) => find.id === user.id)) {
+      return;
+    }
+    dumps.users.push(user);
+  };
+
   dumps.prods.dump_date = prodsData?.dump_date || '';
   dumps.parties.dump_date = partiesData?.dump_date || '';
   dumps.groups.dump_date = groupsData?.dump_date || '';
   dumps.boards.dump_date = boardsData?.dump_date || '';
 
   dumps.prods.data = Object(prodsData).prods;
+  (dumps.prods.data as Prod[]).forEach((prod) => {
+    prod.placings.forEach((placing) => {
+      placing.ranking = Number(placing.ranking);
+      placing.year = Number(placing.year);
+    });
+    prod.voteup = Number(prod.voteup);
+    prod.votepig = Number(prod.votepig);
+    prod.votedown = Number(prod.votedown);
+    prod.voteavg = Number(prod.voteavg);
+    prod.party_place = Number(prod.party_place);
+    prod.party_year = Number(prod.party_year);
+    handleUser(prod.addeduser);
+    prod.invitationyear = Number(prod.invitationyear);
+    prod.rank = Number(prod.rank);
+    prod.credits.forEach((credit) => handleUser(credit.user));
+    Object.keys(prod.platforms).forEach((key) => {
+      dumps.platforms[key] = prod.platforms[key];
+    });
+  });
+
   dumps.parties.data = Object(partiesData).parties;
   dumps.groups.data = Object(groupsData).groups;
   dumps.boards.data = Object(boardsData).boards;
+  (dumps.boards.data as Board[]).forEach((board) => handleUser(board.addeduser));
+}
+
+const pouetdatadumpFiles = fs
+  .readdirSync('.')
+  .filter((filter) => filter.startsWith('pouetdatadump-'))
+  .filter((filter) => filter.endsWith('.json'));
+
+function getFromFile(): Dumps | undefined {
+  let prodsData!: any;
+  let partiesData!: any;
+  let groupsData!: any;
+  let boardsData!: any;
+
+  pouetdatadumpFiles.forEach((file) => {
+    if (file.startsWith('pouetdatadump-boards-') && file.endsWith('.json')) {
+      boardsData = JSON.parse(fs.readFileSync(file).toString());
+    }
+    if (file.startsWith('pouetdatadump-groups-') && file.endsWith('.json')) {
+      groupsData = JSON.parse(fs.readFileSync(file).toString());
+    }
+    if (file.startsWith('pouetdatadump-parties-') && file.endsWith('.json')) {
+      partiesData = JSON.parse(fs.readFileSync(file).toString());
+    }
+    if (file.startsWith('pouetdatadump-prods-') && file.endsWith('.json')) {
+      prodsData = JSON.parse(fs.readFileSync(file).toString());
+    }
+  });
+  if (prodsData && partiesData && groupsData && boardsData) {
+    const locale: Dumps = {
+      prods: createEmptyDump<Prod>(),
+      boards: createEmptyDump<Board>(),
+      groups: createEmptyDump<Group>(),
+      parties: createEmptyDump<Party>(),
+      platforms: {},
+      users: [],
+    };
+    setData(locale, prodsData, partiesData, groupsData, boardsData);
+    return locale;
+  }
+  return undefined;
 }
 
 function getLocale(latest: Dumps): Dumps | undefined {
-  const files = fs
-    .readdirSync('.')
-    .filter((filter) => filter.startsWith('pouetdatadump-'))
-    .filter((filter) => filter.endsWith('.json'));
   const prodsFilename = latest.prods.filename.split('.')[0] + '.json';
   const groupsFilename = latest.groups.filename.split('.')[0] + '.json';
   const partiesFilename = latest.parties.filename.split('.')[0] + '.json';
   const boardsFilename = latest.boards.filename.split('.')[0] + '.json';
   if (
-    files.find((find) => find === prodsFilename) &&
-    files.find((find) => find === groupsFilename) &&
-    files.find((find) => find === partiesFilename) &&
-    files.find((find) => find === boardsFilename)
+    pouetdatadumpFiles.find((find) => find === prodsFilename) &&
+    pouetdatadumpFiles.find((find) => find === groupsFilename) &&
+    pouetdatadumpFiles.find((find) => find === partiesFilename) &&
+    pouetdatadumpFiles.find((find) => find === boardsFilename)
   ) {
     const prodsData = JSON.parse(fs.readFileSync(prodsFilename).toString());
     const partiesData = JSON.parse(fs.readFileSync(partiesFilename).toString());
@@ -86,8 +161,8 @@ function getLocale(latest: Dumps): Dumps | undefined {
   return undefined;
 }
 
-export function getLatest(): Observable<Dumps | undefined> {
-  return new Observable<Dumps | undefined>((subscribe) => {
+export function getLatest(config: { cache?: boolean } = { cache: true }): Observable<Dumps | Error> {
+  return new Observable<Dumps | Error>((subscribe) => {
     axios
       .get<Json>(POUET_NET_JSON)
       .then((value) => {
@@ -97,13 +172,17 @@ export function getLatest(): Observable<Dumps | undefined> {
           parties: createDumpFromInfo<Party>(json.latest.parties),
           groups: createDumpFromInfo<Group>(json.latest.groups),
           boards: createDumpFromInfo<Board>(json.latest.boards),
+          platforms: {},
+          users: [],
         };
 
-        const locale = getLocale(latest);
-        if (locale) {
-          subscribe.next(locale);
-          subscribe.complete();
-          return;
+        if (config.cache === true) {
+          const locale = getLocale(latest);
+          if (locale) {
+            subscribe.next(locale);
+            subscribe.complete();
+            return;
+          }
         }
 
         axios
@@ -128,8 +207,19 @@ export function getLatest(): Observable<Dumps | undefined> {
             }),
           );
       })
-      .catch(() => {
-        subscribe.error();
+      .catch((err: AxiosError) => {
+        const locale = getFromFile();
+        if (locale) {
+          subscribe.next(locale);
+          subscribe.complete();
+          return;
+        }
+        subscribe.error({
+          code: err.code,
+          message: err.message,
+          status: err.status,
+        });
+        subscribe.complete();
       });
   });
 }
