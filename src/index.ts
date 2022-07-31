@@ -161,8 +161,8 @@ function getLocale(latest: Dumps): Dumps | undefined {
   return undefined;
 }
 
-export function getLatest(config: { cache?: boolean } = { cache: true }): Observable<Dumps | Error> {
-  return new Observable<Dumps | Error>((subscribe) => {
+export function getLatest(config: { cache?: boolean } = { cache: true }): Observable<Dumps> {
+  return new Observable<Dumps>((subscribe) => {
     axios
       .get<Json>(POUET_NET_JSON)
       .then((value) => {
@@ -218,7 +218,7 @@ export function getLatest(config: { cache?: boolean } = { cache: true }): Observ
           code: err.code,
           message: err.message,
           status: err.status,
-        });
+        } as Error);
         subscribe.complete();
       });
   });
