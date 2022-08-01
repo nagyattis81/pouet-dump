@@ -14,12 +14,16 @@ npm i @nagyattis81/pouet-dump
 
 ## Example
 
+https://github.com/nagyattis81/pouet-query
+
 ```typescript
 import { getLatest } from '@nagyattis81/pouet-dump';
 import { Prod } from '@nagyattis81/pouet-dump/lib/interfaces';
 
 getLatest().subscribe((dumps) => {
-  const func = dumps.parties.data.find((party) => party.name.toLowerCase() === 'function')?.id;
+  const func = dumps.parties.data.find(
+    (party) => party.name.toLowerCase() === 'function',
+  )?.id;
   if (!func) {
     return;
   }
@@ -36,13 +40,11 @@ getLatest().subscribe((dumps) => {
       }
       return 0;
     })
-    .filter((_, index) => index < 20)
+    .filter((_, index) => index < 10)
     .forEach((prod) => {
       rows.push({
-        id: prod.id,
-        name: prod.name,
-        type: prod.type,
-        youtube: prod.downloadLinks.find((downloadLink) => downloadLink.type.match(/youtube/gi))?.link ?? '',
+        pouetid: prod.id,
+        'name type': prod.name + ' ' + prod.type,
         voteup: prod.voteup,
       });
     });
@@ -53,30 +55,20 @@ getLatest().subscribe((dumps) => {
 
 ```
 2022-07-27 04:30:01
-┌─────────┬─────────┬─────────────────────────────────────────┬──────────────────────────┬─────────────────────────────────────────────────────────────────────────────┬────────┐
-│ (index) │   id    │                  name                   │           type           │                                   youtube                                   │ voteup │
-├─────────┼─────────┼─────────────────────────────────────────┼──────────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────┤
-│    0    │ '32194' │                'tracie'                 │           '1k'           │                  'http://youtube.com/watch?v=UuMOe454R6I'                   │  299   │
-│    1    │ '53871' │                'Spongy'                 │          '128b'          │                'http://www.youtube.com/watch?v=36BPql6Nl_U'                 │  178   │
-│    2    │ '82882' │              'PILEDRIVER'               │          'demo'          │                'https://www.youtube.com/watch?v=4zkSd3-6I2A'                │  158   │
-│    3    │ '51763' │                'passing'                │          'demo'          │                'http://www.youtube.com/watch?v=82wGnCD0Saw'                 │  157   │
-│    4    │ '26655' │               'Demoplex'                │          '256b'          │                'http://www.youtube.com/watch?v=E6zhyutgX1k'                 │  147   │
-│    5    │ '66372' │               'Megapole'                │          '256b'          │                'https://www.youtube.com/watch?v=Z8Av7Sc7yGY'                │  144   │
-│    6    │ '51757' │                'organix'                │ '4k,procedural graphics' │                                     ''                                      │  141   │
-│    7    │ '61883' │            'Apocalypse When'            │          'demo'          │ 'https://www.youtube.com/watch?v=xjWFupnWIv4&list=UU96JVq-z0-0iHAkIkKp1_6w' │  139   │
-│    8    │ '68147' │          'Universal Sequence'           │          '64k'           │                'https://www.youtube.com/watch?v=20vPbH6UWIc'                │  137   │
-│    9    │ '19448' │                 'hell'                  │          '256b'          │                'http://www.youtube.com/watch?v=ajKmg1TmLh8'                 │  136   │
-│   10    │ '19420' │         'Structure 2: Sequence'         │          'demo'          │                'http://www.youtube.com/watch?v=S-e5C7szsuw'                 │  133   │
-│   11    │ '60278' │ 'candy ~TokyoDemoFest 2013 Invitation~' │     '64k,invitation'     │                'http://www.youtube.com/watch?v=pGFOmKvA2l8'                 │  121   │
-│   12    │ '66380' │          'Immediate railways'           │          '256b'          │                'https://www.youtube.com/watch?v=Sbq2HzXEcN4'                │  120   │
-│   13    │ '78045' │                 'Pyrit'                 │          '256b'          │                'http://www.youtube.com/watch?v=eYNoaVERfR4'                 │  113   │
-│   14    │ '32212' │              'Pixel Town'               │          '256b'          │                                     ''                                      │  111   │
-│   15    │ '53875' │                 'Uzel'                  │          '256b'          │                'http://www.youtube.com/watch?v=ytdvlrdr_Ts'                 │  111   │
-│   16    │ '19434' │                 'SSRI'                  │          '64k'           │                'https://www.youtube.com/watch?v=YKAsCLuWgxE'                │  101   │
-│   17    │ '57750' │            'Stainless Steel'            │          '256b'          │                'http://www.youtube.com/watch?v=SIkXiUqHpFI'                 │   98   │
-│   18    │ '61881' │           'primitive beings'            │          'demo'          │                'https://www.youtube.com/watch?v=ACiY93k7bl4'                │   98   │
-│   19    │ '51758' │  'last night a dj killed my demoskene'  │ '4k,procedural graphics' │                                     ''                                      │   94   │
-└─────────┴─────────┴─────────────────────────────────────────┴──────────────────────────┴─────────────────────────────────────────────────────────────────────────────┴────────┘
+┌──────────┬──────────┬───────────────────────────────────┬─────────┐
+│ (index) │ pouetid │            name type             │ voteup │
+├──────────┼──────────┼───────────────────────────────────┼─────────┤
+│    0    │ '32194' │           'tracie 1k'            │  299   │
+│    1    │ '53871' │          'Spongy 128b'           │  178   │
+│    2    │ '82882' │        'PILEDRIVER demo'         │  158   │
+│    3    │ '51763' │          'passing demo'          │  157   │
+│    4    │ '26655' │         'Demoplex 256b'          │  147   │
+│    5    │ '66372' │         'Megapole 256b'          │  144   │
+│    6    │ '51757' │ 'organix 4k,procedural graphics' │  141   │
+│    7    │ '61883' │      'Apocalypse When demo'      │  139   │
+│    8    │ '68147' │     'Universal Sequence 64k'     │  137   │
+│    9    │ '19448' │           'hell 256b'            │  136   │
+└──────────┴──────────┴───────────────────────────────────┴─────────┘
 ```
 
 ## Model
