@@ -53,23 +53,7 @@ getLatest().subscribe((dumps) => {
 });
 ```
 
-```
-2022-07-27 04:30:01
-┌──────────┬──────────┬───────────────────────────────────┬─────────┐
-│ (index) │ pouetid │            name type             │ voteup │
-├──────────┼──────────┼───────────────────────────────────┼─────────┤
-│    0    │ '32194' │           'tracie 1k'            │  299   │
-│    1    │ '53871' │          'Spongy 128b'           │  178   │
-│    2    │ '82882' │        'PILEDRIVER demo'         │  158   │
-│    3    │ '51763' │          'passing demo'          │  157   │
-│    4    │ '26655' │         'Demoplex 256b'          │  147   │
-│    5    │ '66372' │         'Megapole 256b'          │  144   │
-│    6    │ '51757' │ 'organix 4k,procedural graphics' │  141   │
-│    7    │ '61883' │      'Apocalypse When demo'      │  139   │
-│    8    │ '68147' │     'Universal Sequence 64k'     │  137   │
-│    9    │ '19448' │           'hell 256b'            │  136   │
-└──────────┴──────────┴───────────────────────────────────┴─────────┘
-```
+![1]
 
 ## Model
 
@@ -205,3 +189,5 @@ export interface Error {
   status: string;
 }
 ```
+
+[1]: screenshot.png
