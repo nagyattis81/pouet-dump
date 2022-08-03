@@ -120,7 +120,7 @@ export interface Dumps {
   groups: Dump<Group>;
   boards: Dump<Board>;
   platforms: { [key: string]: Platform };
-  users: User[];
+  users: { [key: string]: User };
 }
 
 export interface Error {

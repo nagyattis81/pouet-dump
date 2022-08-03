@@ -79,10 +79,7 @@ function setData(
 ) {
   const handleUser = (user: User) => {
     user.glops = Number(user.glops);
-    if (dumps.users.find((find) => find.id === user.id)) {
-      return;
-    }
-    dumps.users.push(user);
+    dumps.users[user.id] = user;
   };
 
   dumps.prods.dump_date = prodsData?.dump_date || '';
@@ -119,10 +116,11 @@ function setData(
   );
 }
 
-const pouetdatadumpFiles = fs
+export const pouetDatadDmpFiles = fs
   .readdirSync('.')
-  .filter((filter) => filter.startsWith('pouetdatadump-'))
-  .filter((filter) => filter.endsWith('.json'));
+  .filter(
+    (filter) => filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
+  );
 
 function getFromFile(): Dumps | undefined {
   let prodsData!: any;
@@ -130,7 +128,7 @@ function getFromFile(): Dumps | undefined {
   let groupsData!: any;
   let boardsData!: any;
 
-  pouetdatadumpFiles.forEach((file) => {
+  pouetDatadDmpFiles.forEach((file) => {
     if (file.startsWith('pouetdatadump-boards-') && file.endsWith('.json')) {
       boardsData = JSON.parse(fs.readFileSync(file).toString());
     }
@@ -151,7 +149,7 @@ function getFromFile(): Dumps | undefined {
       groups: createEmptyDump<Group>(),
       parties: createEmptyDump<Party>(),
       platforms: {},
-      users: [],
+      users: {},
     };
     setData(locale, prodsData, partiesData, groupsData, boardsData);
     return locale;
@@ -169,10 +167,10 @@ function getLocale(latest: Dumps): Dumps | undefined {
   const partiesFilename = gz2Json(latest.parties.filename);
   const boardsFilename = gz2Json(latest.boards.filename);
   if (
-    pouetdatadumpFiles.find((find) => find === prodsFilename) &&
-    pouetdatadumpFiles.find((find) => find === groupsFilename) &&
-    pouetdatadumpFiles.find((find) => find === partiesFilename) &&
-    pouetdatadumpFiles.find((find) => find === boardsFilename)
+    pouetDatadDmpFiles.find((find) => find === prodsFilename) &&
+    pouetDatadDmpFiles.find((find) => find === groupsFilename) &&
+    pouetDatadDmpFiles.find((find) => find === partiesFilename) &&
+    pouetDatadDmpFiles.find((find) => find === boardsFilename)
   ) {
     const prodsData = JSON.parse(fs.readFileSync(prodsFilename).toString());
     const partiesData = JSON.parse(fs.readFileSync(partiesFilename).toString());
@@ -200,7 +198,7 @@ export function getLatest(
           groups: createDumpFromInfo<Group>(json.latest.groups),
           boards: createDumpFromInfo<Board>(json.latest.boards),
           platforms: {},
-          users: [],
+          users: {},
         };
 
         const files = fs
