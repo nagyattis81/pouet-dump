@@ -8,23 +8,23 @@ import { Dumps } from './interfaces';
 const JSON_DATA = {
   latest: {
     prods: {
-      filename: 'pouetdatadump-prods-20220803.json.gz',
-      url: 'pouetdatadump-prods-20220803.json.gz',
+      filename: 'pouetdatadump-prods-99991231.json.gz',
+      url: 'pouetdatadump-prods-99991231.json.gz',
       size_in_bytes: 0,
     },
     parties: {
-      filename: 'pouetdatadump-parties-20220803.json.gz',
-      url: 'pouetdatadump-parties-20220803.json.gz',
+      filename: 'pouetdatadump-parties-99991231.json.gz',
+      url: 'pouetdatadump-parties-99991231.json.gz',
       size_in_bytes: 0,
     },
     groups: {
-      filename: 'pouetdatadump-groups-20220803.json.gz',
-      url: 'pouetdatadump-groups-20220803.json.gz',
+      filename: 'pouetdatadump-groups-99991231.json.gz',
+      url: 'pouetdatadump-groups-99991231.json.gz',
       size_in_bytes: 0,
     },
     boards: {
-      filename: 'pouetdatadump-boards-20220803.json.gz',
-      url: 'pouetdatadump-boards-20220803.json.gz',
+      filename: 'pouetdatadump-boards-99991231.json.gz',
+      url: 'pouetdatadump-boards-99991231.json.gz',
       size_in_bytes: 0,
     },
   },
@@ -42,18 +42,16 @@ describe('tests', () => {
   };
 
   beforeEach(() => {
-    removeFiles();
     mockAxios = new MockAdapter(axios);
   });
 
   afterEach(() => {
-    removeFiles();
     mockAxios.reset();
   });
 
   it(POUET_NET_JSON + ' 400', (done) => {
     mockAxios.onGet(POUET_NET_JSON).reply(400);
-    getLatest().subscribe({
+    getLatest({ cache: false }).subscribe({
       error: (err: AxiosError) => {
         expect(err.message).toEqual('Request failed with status code 400');
         expect(mockAxios.history.get[0].url).toEqual(POUET_NET_JSON);
@@ -64,7 +62,7 @@ describe('tests', () => {
 
   it(POUET_NET_JSON + ' 200 null data', (done) => {
     mockAxios.onGet(POUET_NET_JSON).reply(200);
-    getLatest().subscribe({
+    getLatest({ cache: false }).subscribe({
       error: (err: any) => {
         expect(err).toBeDefined();
         expect(mockAxios.history.get[0].url).toEqual(POUET_NET_JSON);
@@ -74,36 +72,18 @@ describe('tests', () => {
   });
 
   it(POUET_NET_JSON + ' 200 with invalid data', (done) => {
-    const OLD_JSON_FILE = 'pouetdatadump-old.json';
-    fs.writeFileSync(OLD_JSON_FILE, '');
-    fs.writeFileSync(gz2Json(JSON_DATA.latest.prods.filename), '{}');
-    fs.writeFileSync(gz2Json(JSON_DATA.latest.boards.filename), '{}');
-    fs.writeFileSync(gz2Json(JSON_DATA.latest.parties.filename), '{}');
-    fs.writeFileSync(gz2Json(JSON_DATA.latest.groups.filename), '{}');
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
-    getLatest().subscribe({
+    getLatest({ cache: false }).subscribe({
       error: (err: AxiosError) => {
         expect(err.message).toEqual('Request failed with status code 404');
         expect(mockAxios.history.get[0].url).toEqual(POUET_NET_JSON);
-        expect(fs.existsSync(OLD_JSON_FILE)).toBeFalsy();
-        expect(
-          fs.existsSync(gz2Json(JSON_DATA.latest.prods.filename)),
-        ).toBeTruthy();
-        expect(
-          fs.existsSync(gz2Json(JSON_DATA.latest.boards.filename)),
-        ).toBeTruthy();
-        expect(
-          fs.existsSync(gz2Json(JSON_DATA.latest.parties.filename)),
-        ).toBeTruthy();
-        expect(
-          fs.existsSync(gz2Json(JSON_DATA.latest.groups.filename)),
-        ).toBeTruthy();
         done();
       },
     });
   });
 
   it(POUET_NET_JSON + ' 200 with valid data', (done) => {
+    removeFiles();
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
 
     const mock = (url: string) => {
@@ -123,6 +103,96 @@ describe('tests', () => {
         expect(dumps.boards.data.length).toEqual(1);
         expect(Object.keys(dumps.platforms).length).toEqual(4);
         expect(Object.keys(dumps.users).length).toEqual(5);
+
+        const prod = dumps.prods.data[0];
+        expect(prod.name).toEqual('Astral Blur');
+        expect(prod.placings[0].ranking).toEqual(3);
+        expect(prod.placings[0].year).toEqual(1997);
+        expect(prod.voteup).toEqual(81);
+        expect(prod.votepig).toEqual(18);
+        expect(prod.votedown).toEqual(5);
+        expect(prod.voteavg).toEqual(0.73);
+        expect(prod.party_place).toEqual(3);
+        expect(prod.party_year).toEqual(1997);
+        expect(prod.invitationyear).toEqual(2000);
+        expect(prod.rank).toEqual(665);
+
+        expect(dumps.users['1'].glops).toEqual(850);
+        expect(dumps.users['1'].nickname).toEqual('analogue');
+
+        expect(fs.existsSync('pouetdatadump-prods-99991231.json')).toBeTruthy();
+        expect(
+          fs.existsSync('pouetdatadump-boards-99991231.json'),
+        ).toBeTruthy();
+        expect(
+          fs.existsSync('pouetdatadump-groups-99991231.json'),
+        ).toBeTruthy();
+        expect(
+          fs.existsSync('pouetdatadump-parties-99991231.json'),
+        ).toBeTruthy();
+
+        done();
+      },
+      error: (err) => {
+        throw new Error(err);
+      },
+    });
+  });
+
+  it(POUET_NET_JSON + ' 200 with valid data - from cache', (done) => {
+    removeFiles();
+    mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
+    const OLD_JSON = 'pouetdatadump-old.json';
+    fs.writeFileSync(OLD_JSON, '');
+
+    const mock = (url: string) => {
+      mockAxios.onGet(url).reply(200, fs.readFileSync('./testdata/' + url));
+      const name = gz2Json(url);
+      fs.copyFileSync('./testdata/' + name, name);
+    };
+    mock(JSON_DATA.latest.prods.url);
+    mock(JSON_DATA.latest.groups.url);
+    mock(JSON_DATA.latest.parties.url);
+    mock(JSON_DATA.latest.boards.url);
+
+    getLatest().subscribe({
+      next: (dumps: Dumps) => {
+        expect(dumps.prods.data.length).toEqual(1);
+        expect(dumps.groups.data.length).toEqual(1);
+        expect(dumps.parties.data.length).toEqual(1);
+        expect(dumps.boards.data.length).toEqual(1);
+
+        expect(dumps.prods.data[0].name).toEqual('Astral Blur - from cache');
+        expect(dumps.groups.data[0].name).toEqual(
+          'The Black Lotus - from cache',
+        );
+        expect(dumps.parties.data[0].name).toEqual('2-Thousand - from cache');
+        expect(dumps.boards.data[0].name).toEqual('X-Temple - from cache');
+
+        expect(fs.existsSync(OLD_JSON)).toBeFalsy();
+
+        done();
+      },
+      error: (err) => {
+        throw new Error(err);
+      },
+    });
+  });
+
+  it(POUET_NET_JSON + ' 200 with valid data - undef gz data', (done) => {
+    mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
+
+    const mock = (url: string) => {
+      mockAxios.onGet(url).reply(200);
+    };
+    mock(JSON_DATA.latest.prods.url);
+    mock(JSON_DATA.latest.groups.url);
+    mock(JSON_DATA.latest.parties.url);
+    mock(JSON_DATA.latest.boards.url);
+
+    getLatest({ cache: false }).subscribe({
+      error: (err) => {
+        expect(err).toEqual('undefined gz data');
         done();
       },
     });

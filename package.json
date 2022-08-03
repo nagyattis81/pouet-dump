@@ -5,8 +5,8 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "test": "jest --config jestconfig.json",
-    "coverage": "jest --config jestconfig.json --coverage",
+    "test": "jest --config jestconfig.json --runInBand",
+    "coverage": "jest --config jestconfig.json --coverage --runInBand",
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",

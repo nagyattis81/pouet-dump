@@ -44,6 +44,7 @@ const createEmptyDump = <T>(): Dump<T> => {
 function gunzipJson(
   data: any,
   info: Info,
+  cache: boolean,
 ): Observable<{ dump_date: string } | undefined> {
   return new Observable<any | undefined>((subscribe) => {
     if (!data) {
@@ -54,14 +55,20 @@ function gunzipJson(
     zlib.gunzip(data, (_err: any, output: any) => {
       const content = output.toString();
       const obj = JSON.parse(content);
-      fs.writeFile(info.filename.split('.')[0] + '.json', content, (err) => {
-        if (err) {
-          subscribe.error();
-        } else {
-          subscribe.next(obj);
-        }
+      const name = info.filename.split('.')[0] + '.json';
+      if (cache === true && !fs.existsSync(name)) {
+        fs.writeFile(name, content, (err) => {
+          if (err) {
+            subscribe.error();
+          } else {
+            subscribe.next(obj);
+          }
+          subscribe.complete();
+        });
+      } else {
+        subscribe.next(obj);
         subscribe.complete();
-      });
+      }
     });
   });
 }
@@ -84,32 +91,35 @@ function setData(
   dumps.boards.dump_date = boardsData?.dump_date || '';
 
   dumps.prods.data = Object(prodsData).prods;
-  (dumps.prods.data as Prod[]).forEach((prod) => {
-    prod.placings.forEach((placing) => {
-      placing.ranking = Number(placing.ranking);
-      placing.year = Number(placing.year);
+  if (dumps.prods.data) {
+    (dumps.prods.data as Prod[]).forEach((prod) => {
+      prod.placings.forEach((placing) => {
+        placing.ranking = Number(placing.ranking);
+        placing.year = Number(placing.year);
+      });
+      prod.voteup = Number(prod.voteup);
+      prod.votepig = Number(prod.votepig);
+      prod.votedown = Number(prod.votedown);
+      prod.voteavg = Number(prod.voteavg);
+      prod.party_place = Number(prod.party_place);
+      prod.party_year = Number(prod.party_year);
+      handleUser(prod.addeduser);
+      prod.invitationyear = Number(prod.invitationyear);
+      prod.rank = Number(prod.rank);
+      prod.credits.forEach((credit) => handleUser(credit.user));
+      Object.keys(prod.platforms).forEach((key) => {
+        dumps.platforms[key] = prod.platforms[key];
+      });
     });
-    prod.voteup = Number(prod.voteup);
-    prod.votepig = Number(prod.votepig);
-    prod.votedown = Number(prod.votedown);
-    prod.voteavg = Number(prod.voteavg);
-    prod.party_place = Number(prod.party_place);
-    prod.party_year = Number(prod.party_year);
-    handleUser(prod.addeduser);
-    prod.invitationyear = Number(prod.invitationyear);
-    prod.rank = Number(prod.rank);
-    prod.credits.forEach((credit) => handleUser(credit.user));
-    Object.keys(prod.platforms).forEach((key) => {
-      dumps.platforms[key] = prod.platforms[key];
-    });
-  });
-
+  }
   dumps.parties.data = Object(partiesData).parties;
   dumps.groups.data = Object(groupsData).groups;
   dumps.boards.data = Object(boardsData).boards;
-  (dumps.boards.data as Board[]).forEach((board) =>
-    handleUser(board.addeduser),
-  );
+  if (dumps.boards?.data) {
+    (dumps.boards.data as Board[]).forEach((board) =>
+      handleUser(board.addeduser),
+    );
+  }
 }
 
 export const pouetDatadDmpFiles = fs
@@ -167,6 +177,7 @@ function getLocale(latest: Dumps): Dumps | undefined {
   const groupsFilename = gz2Json(latest.groups.filename);
   const partiesFilename = gz2Json(latest.parties.filename);
   const boardsFilename = gz2Json(latest.boards.filename);
+
   if (
     pouetDatadDmpFiles.find((find) => find === prodsFilename) &&
     pouetDatadDmpFiles.find((find) => find === groupsFilename) &&
@@ -212,27 +223,26 @@ export function getLatest(
           return;
         }
 
-        const files = fs
-          .readdirSync('.')
-          .filter(
-            (filter) =>
-              filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
-          );
-        const removeFile = (file: string) => {
-          const index = files.indexOf(gz2Json(file), 0);
-          if (index > -1) {
-            files.splice(index, 1);
-          }
-        };
-        removeFile(latest.prods.filename);
-        removeFile(latest.parties.filename);
-        removeFile(latest.groups.filename);
-        removeFile(latest.boards.filename);
-        files.forEach((file) => {
-          fs.unlinkSync(file);
-        });
-
         if (config.cache === true) {
+          const files = fs
+            .readdirSync('.')
+            .filter(
+              (filter) =>
+                filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
+            );
+          const removeFile = (file: string) => {
+            const index = files.indexOf(gz2Json(file), 0);
+            if (index > -1) {
+              files.splice(index, 1);
+            }
+          };
+          removeFile(latest.prods.filename);
+          removeFile(latest.parties.filename);
+          removeFile(latest.groups.filename);
+          removeFile(latest.boards.filename);
+          files.forEach((file) => {
+            fs.unlinkSync(file);
+          });
           const locale = getLocale(latest);
           if (locale) {
             subscribe.next(locale);
@@ -257,10 +267,10 @@ export function getLatest(
           .then(
             axios.spread((prods, parties, groups, boards) => {
               forkJoin([
-                gunzipJson(prods.data, latest.prods),
-                gunzipJson(parties.data, latest.parties),
-                gunzipJson(groups.data, latest.groups),
-                gunzipJson(boards.data, latest.boards),
+                gunzipJson(prods.data, latest.prods, config.cache === true),
+                gunzipJson(parties.data, latest.parties, config.cache === true),
+                gunzipJson(groups.data, latest.groups, config.cache === true),
+                gunzipJson(boards.data, latest.boards, config.cache === true),
               ]).subscribe({
                 next: ([prodsData, partiesData, groupsData, boardsData]) => {
                   setData(
@@ -274,11 +284,13 @@ export function getLatest(
                   subscribe.complete();
                 },
                 error: (err: any) => {
-                  const locale = getFromFile();
-                  if (locale) {
-                    subscribe.next(locale);
-                    subscribe.complete();
-                    return;
+                  if (config.cache === true) {
+                    const locale = getFromFile();
+                    if (locale) {
+                      subscribe.next(locale);
+                      subscribe.complete();
+                      return;
+                    }
                   }
                   subscribe.error(err);
                   subscribe.complete();
@@ -292,11 +304,13 @@ export function getLatest(
           });
       })
       .catch((err: AxiosError) => {
-        const locale = getFromFile();
-        if (locale) {
-          subscribe.next(locale);
-          subscribe.complete();
-          return;
+        if (config.cache === true) {
+          const locale = getFromFile();
+          if (locale) {
+            subscribe.next(locale);
+            subscribe.complete();
+            return;
+          }
         }
         subscribe.error(err);
         subscribe.complete();

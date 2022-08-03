@@ -1,0 +1,127 @@
+{
+  "dump_date": "2022-08-03 04:30:01",
+  "prods": [
+    {
+      "id": "1",
+      "name": "Astral Blur - from cache",
+      "download": "https://files.scene.org/view/demos/groups/tbl/pc/astral.zip",
+      "types": ["demo"],
+      "platforms": {
+        "65": { "name": "BeOS", "icon": "k_beos.gif", "slug": "beos" },
+        "66": { "name": "Linux", "icon": "k_linux.gif", "slug": "linux" },
+        "67": { "name": "MS-Dos", "icon": "k_msdos.gif", "slug": "msdos" },
+        "68": { "name": "Windows", "icon": "k_win.gif", "slug": "windows" }
+      },
+      "placings": [
+        {
+          "party": {
+            "id": "43",
+            "name": "The Gathering",
+            "web": "http://www.gathering.org/"
+          },
+          "compo": "95",
+          "ranking": "3",
+          "year": "1997",
+          "compo_name": "pc demo"
+        }
+      ],
+      "groups": [
+        {
+          "id": "1",
+          "name": "The Black Lotus",
+          "acronym": "TBL",
+          "disambiguation": "",
+          "web": "https://archive.is/20130113112736/http://www.tbl.org",
+          "addedUser": "1",
+          "addedDate": "2000-04-23 10:41:05"
+        }
+      ],
+      "awards": [],
+      "type": "demo",
+      "addedUser": "1",
+      "addedDate": "2000-04-23 10:44:48",
+      "releaseDate": "1997-03-15",
+      "voteup": "81",
+      "votepig": "18",
+      "votedown": "5",
+      "voteavg": "0.73",
+      "party_compo": "95",
+      "party_place": "3",
+      "party_year": "1997",
+      "party": {
+        "id": "43",
+        "name": "The Gathering",
+        "web": "http://www.gathering.org/"
+      },
+      "addeduser": {
+        "id": "1",
+        "nickname": "analogue - from cache",
+        "level": "administrator",
+        "avatar": "bobble.gif",
+        "glops": "850",
+        "registerDate": "2000-06-25 17:59:58"
+      },
+      "sceneorg": "0",
+      "demozoo": "11",
+      "csdb": "0",
+      "zxdemo": "0",
+      "invitation": null,
+      "invitationyear": "2000",
+      "boardID": null,
+      "rank": "665",
+      "cdc": 0,
+      "downloadLinks": [
+        {
+          "type": "iXalance version",
+          "link": "ftp://ftp.scene.org/mirrors/hornet/demos/1998/a/astral32.zip"
+        },
+        {
+          "type": "video",
+          "link": "https://files.scene.org/view/demos/groups/tbl/pc/tbl_astralblur.avi"
+        },
+        {
+          "type": "youtube",
+          "link": "https://www.youtube.com/watch?v=eZyLSHyUGBY"
+        }
+      ],
+      "credits": [
+        {
+          "user": {
+            "id": "1199",
+            "nickname": "Jace_TBL - from cache",
+            "level": "user",
+            "avatar": "taikyoku.gif",
+            "glops": "40",
+            "registerDate": "2001-09-25 01:48:39"
+          },
+          "role": "Code (additional)"
+        },
+        {
+          "user": {
+            "id": "20113",
+            "nickname": "Louie500 - from cache",
+            "level": "user",
+            "avatar": "decept.gif",
+            "glops": "7",
+            "registerDate": "2008-04-11 09:04:40"
+          },
+          "role": "Graphics"
+        },
+        {
+          "user": {
+            "id": "89030",
+            "nickname": "Lowlife - from cache",
+            "level": "user",
+            "avatar": "mercury-ava1.gif",
+            "glops": "6",
+            "registerDate": "2012-10-18 08:26:01"
+          },
+          "role": "Graphics"
+        }
+      ],
+      "popularity": 72.2969405196749,
+      "screenshot": "http://content.pouet.net/files/screenshots/00000/00000001.jpg",
+      "party_compo_name": "pc demo"
+    }
+  ]
+}

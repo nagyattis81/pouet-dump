@@ -1,0 +1,20 @@
+{
+  "dump_date": "2022-08-03 04:30:01",
+  "boards": [
+    {
+      "id": "1",
+      "name": "X-Temple - from cache",
+      "addeduser": {
+        "id": "177",
+        "nickname": "psenough - from cache",
+        "level": "user",
+        "avatar": "ps.gif",
+        "glops": "9270",
+        "registerDate": "2000-09-09 22:44:56"
+      },
+      "sysop": "Eraser",
+      "phonenumber": "+7-095-391xxxx",
+      "addedDate": "2005-06-02 23:37:47"
+    }
+  ]
+}
