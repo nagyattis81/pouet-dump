@@ -180,13 +180,7 @@ export interface Dumps {
   groups: Dump<Group>;
   boards: Dump<Board>;
   platforms: { [key: string]: Platform };
-  users: User[];
-}
-
-export interface Error {
-  code: string;
-  message: string;
-  status: string;
+  users: { [key: string]: User };
 }
 ```
 

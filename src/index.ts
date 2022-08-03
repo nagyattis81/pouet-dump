@@ -125,16 +125,21 @@ function getFromFile(): Dumps | undefined {
   let boardsData!: any;
 
   pouetDatadDmpFiles.forEach((file) => {
-    if (file.startsWith('pouetdatadump-boards-') && file.endsWith('.json')) {
+    const existsFile = (preFix: string): boolean => {
+      return (
+        file.startsWith(preFix) && file.endsWith('.json') && fs.existsSync(file)
+      );
+    };
+    if (existsFile('pouetdatadump-boards-')) {
       boardsData = JSON.parse(fs.readFileSync(file).toString());
     }
-    if (file.startsWith('pouetdatadump-groups-') && file.endsWith('.json')) {
+    if (existsFile('pouetdatadump-groups-')) {
       groupsData = JSON.parse(fs.readFileSync(file).toString());
     }
-    if (file.startsWith('pouetdatadump-parties-') && file.endsWith('.json')) {
+    if (existsFile('pouetdatadump-parties-')) {
       partiesData = JSON.parse(fs.readFileSync(file).toString());
     }
-    if (file.startsWith('pouetdatadump-prods-') && file.endsWith('.json')) {
+    if (existsFile('pouetdatadump-prods-')) {
       prodsData = JSON.parse(fs.readFileSync(file).toString());
     }
   });
@@ -153,7 +158,7 @@ function getFromFile(): Dumps | undefined {
   return undefined;
 }
 
-function gz2Json(gz: string): string {
+export function gz2Json(gz: string): string {
   return gz.split('.')[0] + '.json';
 }
 
@@ -166,7 +171,11 @@ function getLocale(latest: Dumps): Dumps | undefined {
     pouetDatadDmpFiles.find((find) => find === prodsFilename) &&
     pouetDatadDmpFiles.find((find) => find === groupsFilename) &&
     pouetDatadDmpFiles.find((find) => find === partiesFilename) &&
-    pouetDatadDmpFiles.find((find) => find === boardsFilename)
+    pouetDatadDmpFiles.find((find) => find === boardsFilename) &&
+    fs.existsSync(prodsFilename) &&
+    fs.existsSync(groupsFilename) &&
+    fs.existsSync(partiesFilename) &&
+    fs.existsSync(boardsFilename)
   ) {
     const prodsData = JSON.parse(fs.readFileSync(prodsFilename).toString());
     const partiesData = JSON.parse(fs.readFileSync(partiesFilename).toString());
