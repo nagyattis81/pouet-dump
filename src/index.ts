@@ -1,14 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import {
-  Prod,
-  Dump,
-  Dumps,
-  Party,
-  Group,
-  Board,
-  Error,
-  User,
-} from './interfaces';
+import { Prod, Dump, Dumps, Party, Group, Board, User } from './interfaces';
 import { forkJoin, Observable } from 'rxjs';
 import * as zlib from 'zlib';
 import * as fs from 'fs';
@@ -55,6 +46,11 @@ function gunzipJson(
   info: Info,
 ): Observable<{ dump_date: string } | undefined> {
   return new Observable<any | undefined>((subscribe) => {
+    if (!data) {
+      subscribe.error('undefined gz data');
+      subscribe.complete();
+      return;
+    }
     zlib.gunzip(data, (_err: any, output: any) => {
       const content = output.toString();
       const obj = JSON.parse(content);
@@ -191,15 +187,21 @@ export function getLatest(
       .get<Json>(POUET_NET_JSON)
       .then((value) => {
         const json = value.data;
-
-        const latest: Dumps = {
-          prods: createDumpFromInfo<Prod>(json.latest.prods),
-          parties: createDumpFromInfo<Party>(json.latest.parties),
-          groups: createDumpFromInfo<Group>(json.latest.groups),
-          boards: createDumpFromInfo<Board>(json.latest.boards),
-          platforms: {},
-          users: {},
-        };
+        let latest: Dumps;
+        try {
+          latest = {
+            prods: createDumpFromInfo<Prod>(json.latest.prods),
+            parties: createDumpFromInfo<Party>(json.latest.parties),
+            groups: createDumpFromInfo<Group>(json.latest.groups),
+            boards: createDumpFromInfo<Board>(json.latest.boards),
+            platforms: {},
+            users: {},
+          };
+        } catch (err) {
+          subscribe.error(err);
+          subscribe.complete();
+          return;
+        }
 
         const files = fs
           .readdirSync('.')
@@ -250,8 +252,8 @@ export function getLatest(
                 gunzipJson(parties.data, latest.parties),
                 gunzipJson(groups.data, latest.groups),
                 gunzipJson(boards.data, latest.boards),
-              ]).subscribe(
-                ([prodsData, partiesData, groupsData, boardsData]) => {
+              ]).subscribe({
+                next: ([prodsData, partiesData, groupsData, boardsData]) => {
                   setData(
                     latest,
                     prodsData,
@@ -262,9 +264,23 @@ export function getLatest(
                   subscribe.next(latest);
                   subscribe.complete();
                 },
-              );
+                error: (err: any) => {
+                  const locale = getFromFile();
+                  if (locale) {
+                    subscribe.next(locale);
+                    subscribe.complete();
+                    return;
+                  }
+                  subscribe.error(err);
+                  subscribe.complete();
+                },
+              });
             }),
-          );
+          )
+          .catch((res) => {
+            subscribe.error(res);
+            subscribe.complete();
+          });
       })
       .catch((err: AxiosError) => {
         const locale = getFromFile();
@@ -273,11 +289,7 @@ export function getLatest(
           subscribe.complete();
           return;
         }
-        subscribe.error({
-          code: err.code,
-          message: err.message,
-          status: err.status,
-        } as Error);
+        subscribe.error(err);
         subscribe.complete();
       });
   });

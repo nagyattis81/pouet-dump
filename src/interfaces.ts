@@ -122,9 +122,3 @@ export interface Dumps {
   platforms: { [key: string]: Platform };
   users: { [key: string]: User };
 }
-
-export interface Error {
-  code: string;
-  message: string;
-  status: string;
-}
