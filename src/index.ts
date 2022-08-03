@@ -1,5 +1,14 @@
 import axios, { AxiosError } from 'axios';
-import { Prod, Dump, Dumps, Party, Group, Board, Error, User } from './interfaces';
+import {
+  Prod,
+  Dump,
+  Dumps,
+  Party,
+  Group,
+  Board,
+  Error,
+  User,
+} from './interfaces';
 import { forkJoin, Observable } from 'rxjs';
 import * as zlib from 'zlib';
 import * as fs from 'fs';
@@ -41,7 +50,10 @@ const createEmptyDump = <T>(): Dump<T> => {
   };
 };
 
-function gunzipJson(data: any, info: Info): Observable<{ dump_date: string } | undefined> {
+function gunzipJson(
+  data: any,
+  info: Info,
+): Observable<{ dump_date: string } | undefined> {
   return new Observable<any | undefined>((subscribe) => {
     zlib.gunzip(data, (_err: any, output: any) => {
       const content = output.toString();
@@ -58,7 +70,13 @@ function gunzipJson(data: any, info: Info): Observable<{ dump_date: string } | u
   });
 }
 
-function setData(dumps: Dumps, prodsData: any, partiesData: any, groupsData: any, boardsData: any) {
+function setData(
+  dumps: Dumps,
+  prodsData: any,
+  partiesData: any,
+  groupsData: any,
+  boardsData: any,
+) {
   const handleUser = (user: User) => {
     user.glops = Number(user.glops);
     if (dumps.users.find((find) => find.id === user.id)) {
@@ -96,7 +114,9 @@ function setData(dumps: Dumps, prodsData: any, partiesData: any, groupsData: any
   dumps.parties.data = Object(partiesData).parties;
   dumps.groups.data = Object(groupsData).groups;
   dumps.boards.data = Object(boardsData).boards;
-  (dumps.boards.data as Board[]).forEach((board) => handleUser(board.addeduser));
+  (dumps.boards.data as Board[]).forEach((board) =>
+    handleUser(board.addeduser),
+  );
 }
 
 const pouetdatadumpFiles = fs
@@ -139,11 +159,15 @@ function getFromFile(): Dumps | undefined {
   return undefined;
 }
 
+function gz2Json(gz: string): string {
+  return gz.split('.')[0] + '.json';
+}
+
 function getLocale(latest: Dumps): Dumps | undefined {
-  const prodsFilename = latest.prods.filename.split('.')[0] + '.json';
-  const groupsFilename = latest.groups.filename.split('.')[0] + '.json';
-  const partiesFilename = latest.parties.filename.split('.')[0] + '.json';
-  const boardsFilename = latest.boards.filename.split('.')[0] + '.json';
+  const prodsFilename = gz2Json(latest.prods.filename);
+  const groupsFilename = gz2Json(latest.groups.filename);
+  const partiesFilename = gz2Json(latest.parties.filename);
+  const boardsFilename = gz2Json(latest.boards.filename);
   if (
     pouetdatadumpFiles.find((find) => find === prodsFilename) &&
     pouetdatadumpFiles.find((find) => find === groupsFilename) &&
@@ -161,12 +185,15 @@ function getLocale(latest: Dumps): Dumps | undefined {
   return undefined;
 }
 
-export function getLatest(config: { cache?: boolean } = { cache: true }): Observable<Dumps> {
+export function getLatest(
+  config: { cache?: boolean } = { cache: true },
+): Observable<Dumps> {
   return new Observable<Dumps>((subscribe) => {
     axios
       .get<Json>(POUET_NET_JSON)
       .then((value) => {
         const json = value.data;
+
         const latest: Dumps = {
           prods: createDumpFromInfo<Prod>(json.latest.prods),
           parties: createDumpFromInfo<Party>(json.latest.parties),
@@ -175,6 +202,26 @@ export function getLatest(config: { cache?: boolean } = { cache: true }): Observ
           platforms: {},
           users: [],
         };
+
+        const files = fs
+          .readdirSync('.')
+          .filter(
+            (filter) =>
+              filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
+          );
+        const removeFile = (file: string) => {
+          const index = files.indexOf(gz2Json(file), 0);
+          if (index > -1) {
+            files.splice(index, 1);
+          }
+        };
+        removeFile(latest.prods.filename);
+        removeFile(latest.parties.filename);
+        removeFile(latest.groups.filename);
+        removeFile(latest.boards.filename);
+        files.forEach((file) => {
+          fs.unlinkSync(file);
+        });
 
         if (config.cache === true) {
           const locale = getLocale(latest);
@@ -188,9 +235,15 @@ export function getLatest(config: { cache?: boolean } = { cache: true }): Observ
         axios
           .all([
             axios.get(latest.prods?.url || '', { responseType: 'arraybuffer' }),
-            axios.get(latest.parties?.url || '', { responseType: 'arraybuffer' }),
-            axios.get(latest.groups?.url || '', { responseType: 'arraybuffer' }),
-            axios.get(latest.boards?.url || '', { responseType: 'arraybuffer' }),
+            axios.get(latest.parties?.url || '', {
+              responseType: 'arraybuffer',
+            }),
+            axios.get(latest.groups?.url || '', {
+              responseType: 'arraybuffer',
+            }),
+            axios.get(latest.boards?.url || '', {
+              responseType: 'arraybuffer',
+            }),
           ])
           .then(
             axios.spread((prods, parties, groups, boards) => {
@@ -199,11 +252,19 @@ export function getLatest(config: { cache?: boolean } = { cache: true }): Observ
                 gunzipJson(parties.data, latest.parties),
                 gunzipJson(groups.data, latest.groups),
                 gunzipJson(boards.data, latest.boards),
-              ]).subscribe(([prodsData, partiesData, groupsData, boardsData]) => {
-                setData(latest, prodsData, partiesData, groupsData, boardsData);
-                subscribe.next(latest);
-                subscribe.complete();
-              });
+              ]).subscribe(
+                ([prodsData, partiesData, groupsData, boardsData]) => {
+                  setData(
+                    latest,
+                    prodsData,
+                    partiesData,
+                    groupsData,
+                    boardsData,
+                  );
+                  subscribe.next(latest);
+                  subscribe.complete();
+                },
+              );
             }),
           );
       })
