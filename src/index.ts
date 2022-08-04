@@ -258,4 +258,22 @@ export default class Pouet {
         });
     });
   }
+  static genCSV(records: any[], path: string, done: () => void) {
+    if (records.length === 0) {
+      return;
+    }
+    const record = records[0];
+    const header: { id: string; title: string }[] = [];
+    Object.keys(record).forEach((key) => {
+      header.push({
+        id: key,
+        title: key,
+      });
+    });
+    const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+    const csvWriter = createCsvWriter({ path, header });
+    csvWriter.writeRecords(records).then(() => {
+      done();
+    });
+  }
 }

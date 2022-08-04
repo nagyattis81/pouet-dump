@@ -20,6 +20,7 @@ npm i @nagyattis81/pouet-dump
 
 ```typescript
 import Pouet, { Prod } from '@nagyattis81/pouet-dump';
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 Pouet.getLatest().subscribe((dumps) => {
   const func = dumps.parties.data.find(
@@ -49,8 +50,14 @@ Pouet.getLatest().subscribe((dumps) => {
         voteup: prod.voteup,
       });
     });
+
   console.log(dumps.prods.dump_date);
   console.table(rows);
+
+  const CSV_FILENAME = 'result.csv';
+  Pouet.genCSV(rows, 'result.csv', () => {
+    console.log('Write', CSV_FILENAME);
+  });
 });
 ```
 

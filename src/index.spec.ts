@@ -41,7 +41,7 @@ const JSON_DATA = {
   },
 };
 
-describe('tests', () => {
+describe('Pouet.getLatest', () => {
   let mockAxios: MockAdapter;
 
   const removeFiles = () => {
@@ -206,6 +206,18 @@ describe('tests', () => {
         expect(err).toEqual('undefined gz data');
         done();
       },
+    });
+  });
+});
+
+describe('Pouet.genCSV', () => {
+  it('genCSV', (done) => {
+    fs.unlinkSync('out.csv');
+    Pouet.genCSV([], 'out.csv', () => {});
+    expect(fs.existsSync('out.csv')).toBeFalsy();
+    Pouet.genCSV([{ id: 'id1', title: 'title1' }], 'out.csv', () => {
+      expect(fs.existsSync('out.csv')).toBeTruthy();
+      done();
     });
   });
 });
