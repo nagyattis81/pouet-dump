@@ -16,7 +16,7 @@ npm i @nagyattis81/pouet-dump
 
 ## Example
 
-[pouet-query](example/README.md)
+[pouet-query](https://github.com/nagyattis81/pouet-dump/tree/main/example)
 
 ```typescript
 import Pouet, { Prod } from '@nagyattis81/pouet-dump';
