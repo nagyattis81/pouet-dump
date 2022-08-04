@@ -1,6 +1,6 @@
 {
   "name": "@nagyattis81/pouet-dump",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "pouet dump",
   "main": "lib/index.js",
   "exports": {
