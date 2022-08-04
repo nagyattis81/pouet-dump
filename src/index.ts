@@ -31,16 +31,6 @@ const createDumpFromInfo = <T>(info: Info): Dump<T> => {
   };
 };
 
-const createEmptyDump = <T>(): Dump<T> => {
-  return {
-    filename: '',
-    url: '',
-    size_in_bytes: -1,
-    dump_date: '',
-    data: [],
-  };
-};
-
 function gunzipJson(
   data: any,
   info: Info,
@@ -58,11 +48,7 @@ function gunzipJson(
       const name = info.filename.split('.')[0] + '.json';
       if (cache === true && !fs.existsSync(name)) {
         fs.writeFile(name, content, (err) => {
-          if (err) {
-            subscribe.error();
-          } else {
-            subscribe.next(obj);
-          }
+          subscribe.next(obj);
           subscribe.complete();
         });
       } else {
@@ -127,46 +113,6 @@ export const pouetDatadDmpFiles = fs
   .filter(
     (filter) => filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
   );
-
-function getFromFile(): Dumps | undefined {
-  let prodsData!: any;
-  let partiesData!: any;
-  let groupsData!: any;
-  let boardsData!: any;
-
-  pouetDatadDmpFiles.forEach((file) => {
-    const existsFile = (preFix: string): boolean => {
-      return (
-        file.startsWith(preFix) && file.endsWith('.json') && fs.existsSync(file)
-      );
-    };
-    if (existsFile('pouetdatadump-boards-')) {
-      boardsData = JSON.parse(fs.readFileSync(file).toString());
-    }
-    if (existsFile('pouetdatadump-groups-')) {
-      groupsData = JSON.parse(fs.readFileSync(file).toString());
-    }
-    if (existsFile('pouetdatadump-parties-')) {
-      partiesData = JSON.parse(fs.readFileSync(file).toString());
-    }
-    if (existsFile('pouetdatadump-prods-')) {
-      prodsData = JSON.parse(fs.readFileSync(file).toString());
-    }
-  });
-  if (prodsData && partiesData && groupsData && boardsData) {
-    const locale: Dumps = {
-      prods: createEmptyDump<Prod>(),
-      boards: createEmptyDump<Board>(),
-      groups: createEmptyDump<Group>(),
-      parties: createEmptyDump<Party>(),
-      platforms: {},
-      users: {},
-    };
-    setData(locale, prodsData, partiesData, groupsData, boardsData);
-    return locale;
-  }
-  return undefined;
-}
 
 export function gz2Json(gz: string): string {
   return gz.split('.')[0] + '.json';
@@ -284,14 +230,6 @@ export function getLatest(
                   subscribe.complete();
                 },
                 error: (err: any) => {
-                  if (config.cache === true) {
-                    const locale = getFromFile();
-                    if (locale) {
-                      subscribe.next(locale);
-                      subscribe.complete();
-                      return;
-                    }
-                  }
                   subscribe.error(err);
                   subscribe.complete();
                 },
@@ -304,14 +242,6 @@ export function getLatest(
           });
       })
       .catch((err: AxiosError) => {
-        if (config.cache === true) {
-          const locale = getFromFile();
-          if (locale) {
-            subscribe.next(locale);
-            subscribe.complete();
-            return;
-          }
-        }
         subscribe.error(err);
         subscribe.complete();
       });
