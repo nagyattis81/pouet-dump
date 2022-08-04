@@ -1,6 +1,8 @@
 # pouet-dump
 
-Queries from pouet dump.
+[![npm](https://img.shields.io/npm/v/@nagyattis81/pouet-dump)](https://www.npmjs.com/package/@nagyattis81/pouet-dump)![npm](https://img.shields.io/npm/dw/@nagyattis81/pouet-dump)
+
+Queries from pouet.net dump.
 
 ## Data source
 
