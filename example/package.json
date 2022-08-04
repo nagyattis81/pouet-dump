@@ -1,0 +1,35 @@
+{
+  "name": "pouet-query",
+  "version": "1.0.0",
+  "description": "pouet query examples",
+  "main": "index.js",
+  "scripts": {
+    "test": "rm -rf node_modules/@nagyattis81 && npm i && npm run query",
+    "query": "ts-node src/query.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nagyattis81/pouet-query.git"
+  },
+  "keywords": [
+    "pouet",
+    "demoscene",
+    "dump",
+    "database",
+    "query"
+  ],
+  "author": "Nagy Attila (aha)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nagyattis81/pouet-query/issues"
+  },
+  "homepage": "https://github.com/nagyattis81/pouet-query#readme",
+  "dependencies": {
+    "@nagyattis81/pouet-dump": "^1.4.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.7.4"
+  },
+  "devDependencies": {
+    "prettier": "^2.7.1"
+  }
+}
