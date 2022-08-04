@@ -3,7 +3,10 @@ import { Prod, Dump, Dumps, Party, Group, Board, User } from './interfaces';
 import { forkJoin, Observable } from 'rxjs';
 import * as zlib from 'zlib';
 import * as fs from 'fs';
-import { POUET_NET_JSON } from './constants';
+
+export * from './interfaces';
+
+const POUET_NET_JSON = 'https://data.pouet.net/json.php';
 
 interface Info {
   filename: string;
@@ -108,13 +111,13 @@ function setData(
   }
 }
 
-export const pouetDatadDmpFiles = fs
+const pouetDatadDmpFiles = fs
   .readdirSync('.')
   .filter(
     (filter) => filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
   );
 
-export function gz2Json(gz: string): string {
+function gz2Json(gz: string): string {
   return gz.split('.')[0] + '.json';
 }
 
@@ -145,105 +148,114 @@ function getLocale(latest: Dumps): Dumps | undefined {
   return undefined;
 }
 
-export function getLatest(
-  config: { cache?: boolean } = { cache: true },
-): Observable<Dumps> {
-  return new Observable<Dumps>((subscribe) => {
-    axios
-      .get<Json>(POUET_NET_JSON)
-      .then((value) => {
-        const json = value.data;
-        let latest: Dumps;
-        try {
-          latest = {
-            prods: createDumpFromInfo<Prod>(json.latest.prods),
-            parties: createDumpFromInfo<Party>(json.latest.parties),
-            groups: createDumpFromInfo<Group>(json.latest.groups),
-            boards: createDumpFromInfo<Board>(json.latest.boards),
-            platforms: {},
-            users: {},
-          };
-        } catch (err) {
-          subscribe.error(err);
-          subscribe.complete();
-          return;
-        }
-
-        if (config.cache === true) {
-          const files = fs
-            .readdirSync('.')
-            .filter(
-              (filter) =>
-                filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
-            );
-          const removeFile = (file: string) => {
-            const index = files.indexOf(gz2Json(file), 0);
-            if (index > -1) {
-              files.splice(index, 1);
-            }
-          };
-          removeFile(latest.prods.filename);
-          removeFile(latest.parties.filename);
-          removeFile(latest.groups.filename);
-          removeFile(latest.boards.filename);
-          files.forEach((file) => {
-            fs.unlinkSync(file);
-          });
-          const locale = getLocale(latest);
-          if (locale) {
-            subscribe.next(locale);
+export default class Pouet {
+  static getLatest(
+    config: { cache?: boolean } = { cache: true },
+  ): Observable<Dumps> {
+    return new Observable<Dumps>((subscribe) => {
+      axios
+        .get<Json>(POUET_NET_JSON)
+        .then((value) => {
+          const json = value.data;
+          let latest: Dumps;
+          try {
+            latest = {
+              prods: createDumpFromInfo<Prod>(json.latest.prods),
+              parties: createDumpFromInfo<Party>(json.latest.parties),
+              groups: createDumpFromInfo<Group>(json.latest.groups),
+              boards: createDumpFromInfo<Board>(json.latest.boards),
+              platforms: {},
+              users: {},
+            };
+          } catch (err) {
+            subscribe.error(err);
             subscribe.complete();
             return;
           }
-        }
 
-        axios
-          .all([
-            axios.get(latest.prods?.url || '', { responseType: 'arraybuffer' }),
-            axios.get(latest.parties?.url || '', {
-              responseType: 'arraybuffer',
-            }),
-            axios.get(latest.groups?.url || '', {
-              responseType: 'arraybuffer',
-            }),
-            axios.get(latest.boards?.url || '', {
-              responseType: 'arraybuffer',
-            }),
-          ])
-          .then(
-            axios.spread((prods, parties, groups, boards) => {
-              forkJoin([
-                gunzipJson(prods.data, latest.prods, config.cache === true),
-                gunzipJson(parties.data, latest.parties, config.cache === true),
-                gunzipJson(groups.data, latest.groups, config.cache === true),
-                gunzipJson(boards.data, latest.boards, config.cache === true),
-              ]).subscribe({
-                next: ([prodsData, partiesData, groupsData, boardsData]) => {
-                  setData(
-                    latest,
-                    prodsData,
-                    partiesData,
-                    groupsData,
-                    boardsData,
-                  );
-                  subscribe.next(latest);
-                  subscribe.complete();
-                },
-                error: (err: any) => {
-                  subscribe.error(err);
-                  subscribe.complete();
-                },
-              });
-            }),
-          )
-          .catch((res) => {
-            subscribe.error(res);
-            subscribe.complete();
-          });
-      })
-      .catch((err: AxiosError) => {
-        subscribe.error(err);
-        subscribe.complete();
-      });
-  });
+          if (config.cache === true) {
+            const files = fs
+              .readdirSync('.')
+              .filter(
+                (filter) =>
+                  filter.startsWith('pouetdatadump-') &&
+                  filter.endsWith('.json'),
+              );
+            const removeFile = (file: string) => {
+              const index = files.indexOf(gz2Json(file), 0);
+              if (index > -1) {
+                files.splice(index, 1);
+              }
+            };
+            removeFile(latest.prods.filename);
+            removeFile(latest.parties.filename);
+            removeFile(latest.groups.filename);
+            removeFile(latest.boards.filename);
+            files.forEach((file) => {
+              fs.unlinkSync(file);
+            });
+            const locale = getLocale(latest);
+            if (locale) {
+              subscribe.next(locale);
+              subscribe.complete();
+              return;
+            }
+          }
+
+          axios
+            .all([
+              axios.get(latest.prods?.url || '', {
+                responseType: 'arraybuffer',
+              }),
+              axios.get(latest.parties?.url || '', {
+                responseType: 'arraybuffer',
+              }),
+              axios.get(latest.groups?.url || '', {
+                responseType: 'arraybuffer',
+              }),
+              axios.get(latest.boards?.url || '', {
+                responseType: 'arraybuffer',
+              }),
+            ])
+            .then(
+              axios.spread((prods, parties, groups, boards) => {
+                forkJoin([
+                  gunzipJson(prods.data, latest.prods, config.cache === true),
+                  gunzipJson(
+                    parties.data,
+                    latest.parties,
+                    config.cache === true,
+                  ),
+                  gunzipJson(groups.data, latest.groups, config.cache === true),
+                  gunzipJson(boards.data, latest.boards, config.cache === true),
+                ]).subscribe({
+                  next: ([prodsData, partiesData, groupsData, boardsData]) => {
+                    setData(
+                      latest,
+                      prodsData,
+                      partiesData,
+                      groupsData,
+                      boardsData,
+                    );
+                    subscribe.next(latest);
+                    subscribe.complete();
+                  },
+                  error: (err: any) => {
+                    subscribe.error(err);
+                    subscribe.complete();
+                  },
+                });
+              }),
+            )
+            .catch((res) => {
+              subscribe.error(res);
+              subscribe.complete();
+            });
+        })
+        .catch((err: AxiosError) => {
+          subscribe.error(err);
+          subscribe.complete();
+        });
+    });
+  }
 }

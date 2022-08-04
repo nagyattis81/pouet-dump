@@ -1,9 +1,20 @@
 import axios, { AxiosError } from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { gz2Json, pouetDatadDmpFiles, getLatest } from '.';
-import { POUET_NET_JSON } from './constants';
+import Pouet from '.';
 import * as fs from 'fs';
 import { Dumps } from './interfaces';
+
+const POUET_NET_JSON = 'https://data.pouet.net/json.php';
+
+const pouetDatadDmpFiles = fs
+  .readdirSync('.')
+  .filter(
+    (filter) => filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
+  );
+
+function gz2Json(gz: string): string {
+  return gz.split('.')[0] + '.json';
+}
 
 const JSON_DATA = {
   latest: {
@@ -51,7 +62,7 @@ describe('tests', () => {
 
   it(POUET_NET_JSON + ' 400', (done) => {
     mockAxios.onGet(POUET_NET_JSON).reply(400);
-    getLatest({ cache: false }).subscribe({
+    Pouet.getLatest({ cache: false }).subscribe({
       error: (err: AxiosError) => {
         expect(err.message).toEqual('Request failed with status code 400');
         expect(mockAxios.history.get[0].url).toEqual(POUET_NET_JSON);
@@ -62,7 +73,7 @@ describe('tests', () => {
 
   it(POUET_NET_JSON + ' 200 null data', (done) => {
     mockAxios.onGet(POUET_NET_JSON).reply(200);
-    getLatest({ cache: false }).subscribe({
+    Pouet.getLatest({ cache: false }).subscribe({
       error: (err: any) => {
         expect(err).toBeDefined();
         expect(mockAxios.history.get[0].url).toEqual(POUET_NET_JSON);
@@ -73,7 +84,7 @@ describe('tests', () => {
 
   it(POUET_NET_JSON + ' 200 with invalid data', (done) => {
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
-    getLatest({ cache: false }).subscribe({
+    Pouet.getLatest({ cache: false }).subscribe({
       error: (err: AxiosError) => {
         expect(err.message).toEqual('Request failed with status code 404');
         expect(mockAxios.history.get[0].url).toEqual(POUET_NET_JSON);
@@ -95,7 +106,7 @@ describe('tests', () => {
     mock(JSON_DATA.latest.parties.url);
     mock(JSON_DATA.latest.boards.url);
 
-    getLatest().subscribe({
+    Pouet.getLatest().subscribe({
       next: (dumps: Dumps) => {
         expect(dumps.prods.data.length).toEqual(1);
         expect(dumps.groups.data.length).toEqual(1);
@@ -155,7 +166,7 @@ describe('tests', () => {
     mock(JSON_DATA.latest.parties.url);
     mock(JSON_DATA.latest.boards.url);
 
-    getLatest().subscribe({
+    Pouet.getLatest().subscribe({
       next: (dumps: Dumps) => {
         expect(dumps.prods.data.length).toEqual(1);
         expect(dumps.groups.data.length).toEqual(1);
@@ -190,7 +201,7 @@ describe('tests', () => {
     mock(JSON_DATA.latest.parties.url);
     mock(JSON_DATA.latest.boards.url);
 
-    getLatest({ cache: false }).subscribe({
+    Pouet.getLatest({ cache: false }).subscribe({
       error: (err) => {
         expect(err).toEqual('undefined gz data');
         done();

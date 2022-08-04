@@ -19,10 +19,9 @@ npm i @nagyattis81/pouet-dump
 https://github.com/nagyattis81/pouet-query
 
 ```typescript
-import { getLatest } from '@nagyattis81/pouet-dump';
-import { Prod } from '@nagyattis81/pouet-dump/lib/interfaces';
+import Pouet, { Prod } from '@nagyattis81/pouet-dump';
 
-getLatest().subscribe((dumps) => {
+Pouet.getLatest().subscribe((dumps) => {
   const func = dumps.parties.data.find(
     (party) => party.name.toLowerCase() === 'function',
   )?.id;
