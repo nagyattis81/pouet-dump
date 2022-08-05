@@ -1,12 +1,26 @@
 import axios, { AxiosError } from 'axios';
-import { Prod, Dump, Dumps, Party, Group, Board, User } from './interfaces';
+import {
+  Prod,
+  Dump,
+  Dumps,
+  Party,
+  Group,
+  Board,
+  User,
+  Platform,
+} from './interfaces';
 import { forkJoin, Observable } from 'rxjs';
 import * as zlib from 'zlib';
 import * as fs from 'fs';
+import * as path from 'path';
+import * as sqlite3 from 'sqlite3';
+import { exit } from 'process';
+import { group } from 'console';
 
 export * from './interfaces';
 
 const POUET_NET_JSON = 'https://data.pouet.net/json.php';
+const DB_FILE_NAME = 'pouet.db';
 
 interface Info {
   filename: string;
@@ -22,6 +36,10 @@ interface Json {
     groups: Info;
     boards: Info;
   };
+}
+
+interface Config {
+  cache?: boolean;
 }
 
 const createDumpFromInfo = <T>(info: Info): Dump<T> => {
@@ -148,10 +166,353 @@ function getLocale(latest: Dumps): Dumps | undefined {
   return undefined;
 }
 
+function createTables(db: sqlite3.Database) {
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION;');
+    const sql = fs
+      .readFileSync(path.join(__dirname, './create.sql'))
+      .toString();
+    sql.split(');').forEach((txt) => {
+      if (txt) {
+        txt += ');';
+        db.run(txt);
+      }
+    });
+    db.run('COMMIT;');
+  });
+}
+
+function repQuestMark(value: number): string {
+  return ',?'.repeat(value).substring(1);
+}
+
+function insertProd(db: sqlite3.Database, prod: Prod) {
+  const values: any[] = [
+    Number(prod.id),
+    prod.name,
+    prod.download,
+    prod.type,
+    prod.addedUser,
+    prod.addedDate,
+    prod.releaseDate,
+    Number(prod.voteup),
+    Number(prod.votepig),
+    Number(prod.votedown),
+    Number(prod.voteavg),
+    prod.party_compo,
+    Number(prod.party_place),
+    Number(prod.party_year),
+    Number(prod.party),
+    Number(prod.addeduser.id),
+    prod.sceneorg,
+    prod.demozoo,
+    prod.csdb,
+    prod.zxdemo,
+    prod.invitation,
+    Number(prod.invitationyear),
+    prod.boardID,
+    Number(prod.rank),
+    Number(prod.cdc),
+    Number(prod.popularity),
+    prod.screenshot,
+    prod.party_compo_name,
+  ];
+  const sql =
+    `INSERT INTO prod(
+    id,
+    name,
+    download,
+    type,
+    addedUserName,
+    addedDate,
+    releaseDate,
+    voteup,
+    votepig,
+    votedown,
+    voteavg,
+    party_compo,
+    party_place,
+    party_year,
+    party,
+    addedUserId,
+    sceneorg,
+    demozoo,
+    csdb,
+    zxdemo,
+    invitation,
+    invitationyear,
+    boardID,
+    rank,
+    cdc,
+    popularity,
+    screenshot,
+    party_compo_name
+  ) VALUES(` +
+    repQuestMark(values.length) +
+    `);`;
+  db.run(sql, values, (err) => {
+    if (err) {
+      console.log(err, sql);
+      exit(1);
+    }
+  });
+  insertParty(db, prod.party);
+  prod.groups.forEach((group) => {
+    insertGroup(db, group, Number(prod.id));
+  });
+  Object.keys(prod.platforms).forEach((key) =>
+    insertPlatform(db, Number(key), prod.platforms[key], Number(prod.id)),
+  );
+
+  prod.types.forEach((type) => {
+    const values: any[] = [Number(prod.id), type];
+    const sql = 'INSERT INTO types (prod,value) VALUES(?,?);';
+    db.run(sql, values, (err) => {
+      if (err) {
+        console.log(err, sql);
+        exit(1);
+      }
+    });
+  });
+
+  prod.downloadLinks.forEach((downloadLink) => {
+    const values: any[] = [
+      Number(prod.id),
+      downloadLink.type,
+      downloadLink.link,
+    ];
+    const sql = 'INSERT INTO downloadLinks (prod,type,link) VALUES(?,?,?);';
+    db.run(sql, values, (err) => {
+      if (err) {
+        console.log(err, sql);
+        exit(1);
+      }
+    });
+  });
+
+  prod.credits.forEach((credit) => {
+    const values: any[] = [
+      Number(prod.id),
+      Number(credit.user.id),
+      credit.role,
+    ];
+    const sql = 'INSERT INTO credits (prod, user,role) VALUES(?,?,?);';
+    db.run(sql, values, (err) => {
+      if (err) {
+        console.log(err, sql);
+        exit(1);
+      }
+    });
+  });
+
+  prod.awards.forEach((award) => {
+    const values: any[] = [
+      Number(award.id),
+      Number(award.prodID),
+      Number(award.categoryID),
+      award.awardType,
+    ];
+    const sql =
+      'INSERT INTO awards (id,prodID,categoryID,awardType) VALUES(' +
+      repQuestMark(values.length) +
+      ');';
+    db.run(sql, values, (err) => {
+      if (err) {
+        console.log(err, sql);
+        exit(1);
+      }
+    });
+  });
+
+  prod.placings.forEach((placing) => {
+    const values: any[] = [
+      Number(prod.id),
+      Number(placing.party.id),
+      placing.compo,
+      placing.ranking,
+      placing.year,
+      placing.compo_name,
+    ];
+    const sql =
+      'INSERT INTO placings (prod, party,compo,ranking,year,compo_name) VALUES(' +
+      repQuestMark(values.length) +
+      ');';
+    db.run(sql, values, (err) => {
+      if (err) {
+        console.log(err, sql);
+        exit(1);
+      }
+    });
+  });
+}
+
+function insertParty(db: sqlite3.Database, party: Party) {
+  if (!party) {
+    return;
+  }
+  const values: any[] = [
+    Number(party.id),
+    party.name,
+    party.web,
+    party.addedDate,
+    party.addedUser,
+  ];
+  const sql =
+    'INSERT OR IGNORE INTO party (id,name,web,addedDate,addedUser) VALUES(' +
+    repQuestMark(values.length) +
+    ')';
+  db.run(sql, values, (err) => {
+    if (err) {
+      console.log(err, sql);
+      exit(1);
+    }
+  });
+}
+
+function insertBoard(db: sqlite3.Database, board: Board) {
+  const values: any[] = [
+    Number(board.id),
+    board.name,
+    Number(board.addeduser.id),
+    board.sysop,
+    board.phonenumber,
+    board.addedDate,
+  ];
+  const sql =
+    'INSERT INTO board (id,name,addedUser,sysop,phonenumber,addedDate) VALUES(' +
+    repQuestMark(values.length) +
+    ');';
+  db.run(sql, values, (err) => {
+    if (err) {
+      console.log(err, sql);
+      exit(1);
+    }
+  });
+}
+
+function insertGroup(db: sqlite3.Database, group: Group, prodId?: number) {
+  const values: any[] = [
+    Number(group.id),
+    group.name,
+    group.acronym,
+    group.disambiguation,
+    group.web,
+    group.addedUser,
+    group.addedDate,
+    group.csdb,
+    group.zxdemo,
+    group.demozoo,
+  ];
+  const sql =
+    'INSERT OR IGNORE INTO group_ (id,name,acronym,disambiguation,web,addedUser,addedDate,csdb,zxdemo,demozoo) VALUES(' +
+    repQuestMark(values.length) +
+    ');';
+  db.run(sql, values, (err) => {
+    if (err) {
+      console.log(err, sql);
+      exit(1);
+    }
+  });
+  if (prodId !== undefined) {
+    db.run(
+      'INSERT INTO groups (prod,group_) VALUES(?,?);',
+      [prodId, Number(group.id)],
+      (err) => {
+        if (err) {
+          console.log(err, sql);
+          exit(1);
+        }
+      },
+    );
+  }
+}
+
+function insertPlatform(
+  db: sqlite3.Database,
+  id: number,
+  platform: Platform,
+  prodId?: number,
+) {
+  const values: any[] = [id, platform.name, platform.icon, platform.slug];
+  const sql =
+    'INSERT OR IGNORE INTO platform (id,name,icon,slug) VALUES(' +
+    repQuestMark(values.length) +
+    ');';
+  db.run(sql, values, (err) => {
+    if (err) {
+      console.log(err, sql);
+      exit(1);
+    }
+  });
+  if (prodId !== undefined) {
+    db.run(
+      'INSERT INTO platforms (prod,platform) VALUES(?,?);',
+      [prodId, id],
+      (err) => {
+        if (err) {
+          console.log(err, sql);
+          exit(1);
+        }
+      },
+    );
+  }
+}
+
+function insertUser(db: sqlite3.Database, user: User) {
+  const values: any[] = [
+    Number(user.id),
+    user.nickname,
+    user.level,
+    user.avatar,
+    user.glops,
+    user.registerDate,
+  ];
+  const sql =
+    'INSERT OR IGNORE INTO user (id,nickname,level,avatar,glops,registerDate) VALUES(' +
+    repQuestMark(values.length) +
+    ');';
+  db.run(sql, values, (err) => {
+    if (err) {
+      console.log(err, sql);
+      exit(1);
+    }
+  });
+}
+
+function insertTables(db: sqlite3.Database): Observable<any> {
+  return new Observable<any>((subscribe) => {
+    Pouet.getLatest({ cache: false }).subscribe((dumps) => {
+      db.serialize(() => {
+        db.run('BEGIN TRANSACTION;');
+        dumps.parties.data.forEach((party) => insertParty(db, party));
+        dumps.boards.data.forEach((board) => insertBoard(db, board));
+        dumps.groups.data.forEach((group) => insertGroup(db, group));
+        Object.values(dumps.users).forEach((user) => insertUser(db, user));
+        dumps.prods.data.forEach((prod) => insertProd(db, prod));
+        db.run('COMMIT;');
+        subscribe.next(null);
+        subscribe.complete();
+      });
+    });
+  });
+}
+
+function createDatabase(): Observable<sqlite3.Database> {
+  return new Observable<sqlite3.Database>((subscribe) => {
+    const db = new sqlite3.Database(DB_FILE_NAME, (err) => {
+      createTables(db);
+      insertTables(db).subscribe(() => {
+        subscribe.next(db);
+        subscribe.complete();
+      });
+    });
+  });
+}
+
+function runQueries(db: sqlite3.Database, sql: string) {}
+
 export default class Pouet {
-  static getLatest(
-    config: { cache?: boolean } = { cache: true },
-  ): Observable<Dumps> {
+  static getLatest(config: Config = { cache: true }): Observable<Dumps> {
     return new Observable<Dumps>((subscribe) => {
       axios
         .get<Json>(POUET_NET_JSON)
@@ -274,6 +635,45 @@ export default class Pouet {
     const csvWriter = createCsvWriter({ path, header });
     csvWriter.writeRecords(records).then(() => {
       done();
+    });
+  }
+  static sqlQuery(
+    sql: string,
+    config: Config = { cache: true },
+  ): Observable<any[]> {
+    return new Observable<any[]>((subscribe) => {
+      if (config.cache === false) {
+        if (fs.existsSync(DB_FILE_NAME)) {
+          fs.unlinkSync(DB_FILE_NAME);
+        }
+        createDatabase().subscribe((db) => {
+          runQueries(db, sql);
+          subscribe.next([]);
+          subscribe.complete();
+        });
+        return;
+      }
+
+      const db = new sqlite3.Database(
+        DB_FILE_NAME,
+        sqlite3.OPEN_READWRITE,
+        (err) => {
+          if (err) {
+            if (Object(err).code === 'SQLITE_CANTOPEN') {
+              // runQueries(createDatabase(config), sql);
+              subscribe.next([]);
+              subscribe.complete();
+              return;
+            } else {
+              subscribe.error(err);
+              subscribe.complete();
+            }
+          }
+          runQueries(db, sql);
+          subscribe.next([]);
+          subscribe.complete();
+        },
+      );
     });
   }
 }

@@ -107,3 +107,4 @@ dist
 pouetdatadump-*.json
 !/testdata/pouetdatadump-*.json
 *.csv
+pouet.db
