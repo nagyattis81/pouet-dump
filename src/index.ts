@@ -411,9 +411,18 @@ function insertUser(db: sqlite3.Database, user: User) {
   );
 }
 
-function insertTables(db: sqlite3.Database): Observable<any> {
+function insertTables(
+  db: sqlite3.Database,
+  progress?: (title: string) => void,
+): Observable<any> {
+  if (progress) {
+    progress('Get latest');
+  }
   return new Observable<any>((subscribe) => {
     Pouet.getLatest({ cache: false }).subscribe((dumps) => {
+      if (progress) {
+        progress('Start transaction');
+      }
       db.serialize(() => {
         db.run('BEGIN TRANSACTION;');
         dumps.parties.data.forEach((party) => insertParty(db, party));
@@ -422,6 +431,9 @@ function insertTables(db: sqlite3.Database): Observable<any> {
         Object.values(dumps.users).forEach((user) => insertUser(db, user));
         dumps.prods.data.forEach((prod) => insertProd(db, prod));
         db.run('COMMIT;');
+        if (progress) {
+          progress('Stop transaction');
+        }
         subscribe.next(null);
         subscribe.complete();
       });
@@ -429,11 +441,22 @@ function insertTables(db: sqlite3.Database): Observable<any> {
   });
 }
 
-function createDatabase(): Observable<sqlite3.Database> {
+function createDatabase(
+  progress?: (title: string) => void,
+): Observable<sqlite3.Database> {
+  if (progress) {
+    progress('Create database');
+  }
   return new Observable<sqlite3.Database>((subscribe) => {
     const db = new sqlite3.Database(DB_FILE_NAME, (err) => {
+      if (progress) {
+        progress('Create tables');
+      }
       createTables(db);
-      insertTables(db).subscribe(() => {
+      if (progress) {
+        progress('Insert tables');
+      }
+      insertTables(db, progress).subscribe(() => {
         subscribe.next(db);
         subscribe.complete();
       });
@@ -441,7 +464,14 @@ function createDatabase(): Observable<sqlite3.Database> {
   });
 }
 
-function runQueries(db: sqlite3.Database, sql: string): Observable<any[]> {
+function runQueries(
+  db: sqlite3.Database,
+  sql: string,
+  progress?: (title: string) => void,
+): Observable<any[]> {
+  if (progress) {
+    progress('Start query');
+  }
   return new Observable<any[]>((subscribe) => {
     db.serialize(() => {
       const rows: any[] = [];
@@ -454,6 +484,9 @@ function runQueries(db: sqlite3.Database, sql: string): Observable<any[]> {
           if (err) {
             subscribe.error(err);
           } else {
+            if (progress) {
+              progress('Stop query');
+            }
             subscribe.next(rows);
           }
           subscribe.complete();
@@ -589,14 +622,20 @@ export default class Pouet {
       done();
     });
   }
-  static sqlQuery(sql: string): Observable<any[]> {
+  static sqlQuery(
+    sql: string,
+    progress?: (title: string) => void,
+  ): Observable<any[]> {
     return new Observable<any[]>((subscribe) => {
       if (fs.existsSync(DB_FILE_NAME)) {
+        if (progress) {
+          progress('Open ' + DB_FILE_NAME);
+        }
         const db = new sqlite3.Database(
           DB_FILE_NAME,
           sqlite3.OPEN_READWRITE,
           (err) => {
-            runQueries(db, sql).subscribe((result) => {
+            runQueries(db, sql, progress).subscribe((result) => {
               subscribe.next(result);
               subscribe.complete();
             });
@@ -604,42 +643,15 @@ export default class Pouet {
         );
         return;
       }
-
-      /*      
-      if (config.cache === false) {
-        if (fs.existsSync(DB_FILE_NAME)) {
-          fs.unlinkSync(DB_FILE_NAME);
-        }
-        createDatabase().subscribe((db) => {
-          runQueries(db, sql).subscribe((result) => {
-            subscribe.next(result);
-            subscribe.complete();
-          });
-        });
-        return;
+      if (progress) {
+        progress('Create ' + DB_FILE_NAME);
       }
-
-      const db = new sqlite3.Database(
-        DB_FILE_NAME,
-        sqlite3.OPEN_READWRITE,
-        (err) => {
-          if (err) {
-            if (Object(err).code === 'SQLITE_CANTOPEN') {
-              // runQueries(createDatabase(config), sql);
-              subscribe.next([]);
-              subscribe.complete();
-              return;
-            } else {
-              subscribe.error(err);
-              subscribe.complete();
-            }
-          }
-          runQueries(db, sql);
-          subscribe.next([]);
+      createDatabase(progress).subscribe((db) => {
+        runQueries(db, sql, progress).subscribe((result) => {
+          subscribe.next(result);
           subscribe.complete();
-        },
-      );
-*/
+        });
+      });
     });
   }
 }

@@ -1,11 +1,16 @@
 CREATE TABLE
-  IF NOT EXISTS awards (id INT, prodID INT, categoryID INT, awardType VARCHAR);
+  IF NOT EXISTS awards (
+    id INT UNIQUE PRIMARY KEY,
+    prodID INT,
+    categoryID INT,
+    awardType VARCHAR
+  );
 
 CREATE INDEX awards_prodID_idx ON awards (prodID);
 
 CREATE TABLE
   IF NOT EXISTS board (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     addedUser INT,
     sysop VARCHAR,
@@ -29,7 +34,7 @@ CREATE INDEX downloadLinks_prod_idx ON downloadLinks (prod);
 
 CREATE TABLE
   IF NOT EXISTS group_ (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     acronym VARCHAR,
     disambiguation VARCHAR,
@@ -51,7 +56,7 @@ CREATE INDEX groups_prod_idx ON groups (prod);
 
 CREATE TABLE
   IF NOT EXISTS party (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     web VARCHAR,
     addedDate VARCHAR,
@@ -75,7 +80,7 @@ CREATE INDEX placings_prod_idx ON placings (prod);
 
 CREATE TABLE
   IF NOT EXISTS platform (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     icon VARCHAR,
     slug VARCHAR,
@@ -130,7 +135,7 @@ CREATE INDEX types_prod_idx ON types (prod);
 
 CREATE TABLE
   IF NOT EXISTS user (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     nickname VARCHAR,
     level VARCHAR,
     avatar VARCHAR,
