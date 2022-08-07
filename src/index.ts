@@ -451,7 +451,11 @@ function runQueries(db: sqlite3.Database, sql: string): Observable<any[]> {
           rows.push(row);
         },
         (err: Error | null, count: number) => {
-          subscribe.next(rows);
+          if (err) {
+            subscribe.error(err);
+          } else {
+            subscribe.next(rows);
+          }
           subscribe.complete();
         },
       );
@@ -585,11 +589,23 @@ export default class Pouet {
       done();
     });
   }
-  static sqlQuery(
-    sql: string,
-    config: Config = { cache: true },
-  ): Observable<any[]> {
+  static sqlQuery(sql: string): Observable<any[]> {
     return new Observable<any[]>((subscribe) => {
+      if (fs.existsSync(DB_FILE_NAME)) {
+        const db = new sqlite3.Database(
+          DB_FILE_NAME,
+          sqlite3.OPEN_READWRITE,
+          (err) => {
+            runQueries(db, sql).subscribe((result) => {
+              subscribe.next(result);
+              subscribe.complete();
+            });
+          },
+        );
+        return;
+      }
+
+      /*      
       if (config.cache === false) {
         if (fs.existsSync(DB_FILE_NAME)) {
           fs.unlinkSync(DB_FILE_NAME);
@@ -623,6 +639,7 @@ export default class Pouet {
           subscribe.complete();
         },
       );
+*/
     });
   }
 }
