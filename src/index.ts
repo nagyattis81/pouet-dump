@@ -14,8 +14,6 @@ import * as zlib from 'zlib';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sqlite3 from 'sqlite3';
-import { exit } from 'process';
-import { group } from 'console';
 
 export * from './interfaces';
 
@@ -250,12 +248,7 @@ function insertProd(db: sqlite3.Database, prod: Prod) {
   ) VALUES(` +
     repQuestMark(values.length) +
     `);`;
-  db.run(sql, values, (err) => {
-    if (err) {
-      console.log(err, sql);
-      exit(1);
-    }
-  });
+  db.run(sql, values);
   insertParty(db, prod.party);
   prod.groups.forEach((group) => {
     insertGroup(db, group, Number(prod.id));
@@ -265,44 +258,26 @@ function insertProd(db: sqlite3.Database, prod: Prod) {
   );
 
   prod.types.forEach((type) => {
-    const values: any[] = [Number(prod.id), type];
-    const sql = 'INSERT INTO types (prod,value) VALUES(?,?);';
-    db.run(sql, values, (err) => {
-      if (err) {
-        console.log(err, sql);
-        exit(1);
-      }
-    });
+    db.run('INSERT INTO types (prod,value) VALUES(?,?);', [
+      Number(prod.id),
+      type,
+    ]);
   });
 
   prod.downloadLinks.forEach((downloadLink) => {
-    const values: any[] = [
+    db.run('INSERT INTO downloadLinks (prod,type,link) VALUES(?,?,?);', [
       Number(prod.id),
       downloadLink.type,
       downloadLink.link,
-    ];
-    const sql = 'INSERT INTO downloadLinks (prod,type,link) VALUES(?,?,?);';
-    db.run(sql, values, (err) => {
-      if (err) {
-        console.log(err, sql);
-        exit(1);
-      }
-    });
+    ]);
   });
 
   prod.credits.forEach((credit) => {
-    const values: any[] = [
+    db.run('INSERT INTO credits (prod, user,role) VALUES(?,?,?);', [
       Number(prod.id),
       Number(credit.user.id),
       credit.role,
-    ];
-    const sql = 'INSERT INTO credits (prod, user,role) VALUES(?,?,?);';
-    db.run(sql, values, (err) => {
-      if (err) {
-        console.log(err, sql);
-        exit(1);
-      }
-    });
+    ]);
   });
 
   prod.awards.forEach((award) => {
@@ -312,16 +287,12 @@ function insertProd(db: sqlite3.Database, prod: Prod) {
       Number(award.categoryID),
       award.awardType,
     ];
-    const sql =
+    db.run(
       'INSERT INTO awards (id,prodID,categoryID,awardType) VALUES(' +
-      repQuestMark(values.length) +
-      ');';
-    db.run(sql, values, (err) => {
-      if (err) {
-        console.log(err, sql);
-        exit(1);
-      }
-    });
+        repQuestMark(values.length) +
+        ');',
+      values,
+    );
   });
 
   prod.placings.forEach((placing) => {
@@ -333,16 +304,12 @@ function insertProd(db: sqlite3.Database, prod: Prod) {
       placing.year,
       placing.compo_name,
     ];
-    const sql =
+    db.run(
       'INSERT INTO placings (prod, party,compo,ranking,year,compo_name) VALUES(' +
-      repQuestMark(values.length) +
-      ');';
-    db.run(sql, values, (err) => {
-      if (err) {
-        console.log(err, sql);
-        exit(1);
-      }
-    });
+        repQuestMark(values.length) +
+        ');',
+      values,
+    );
   });
 }
 
@@ -357,16 +324,12 @@ function insertParty(db: sqlite3.Database, party: Party) {
     party.addedDate,
     party.addedUser,
   ];
-  const sql =
+  db.run(
     'INSERT OR IGNORE INTO party (id,name,web,addedDate,addedUser) VALUES(' +
-    repQuestMark(values.length) +
-    ')';
-  db.run(sql, values, (err) => {
-    if (err) {
-      console.log(err, sql);
-      exit(1);
-    }
-  });
+      repQuestMark(values.length) +
+      ')',
+    values,
+  );
 }
 
 function insertBoard(db: sqlite3.Database, board: Board) {
@@ -378,16 +341,12 @@ function insertBoard(db: sqlite3.Database, board: Board) {
     board.phonenumber,
     board.addedDate,
   ];
-  const sql =
+  db.run(
     'INSERT INTO board (id,name,addedUser,sysop,phonenumber,addedDate) VALUES(' +
-    repQuestMark(values.length) +
-    ');';
-  db.run(sql, values, (err) => {
-    if (err) {
-      console.log(err, sql);
-      exit(1);
-    }
-  });
+      repQuestMark(values.length) +
+      ');',
+    values,
+  );
 }
 
 function insertGroup(db: sqlite3.Database, group: Group, prodId?: number) {
@@ -403,27 +362,17 @@ function insertGroup(db: sqlite3.Database, group: Group, prodId?: number) {
     group.zxdemo,
     group.demozoo,
   ];
-  const sql =
+  db.run(
     'INSERT OR IGNORE INTO group_ (id,name,acronym,disambiguation,web,addedUser,addedDate,csdb,zxdemo,demozoo) VALUES(' +
-    repQuestMark(values.length) +
-    ');';
-  db.run(sql, values, (err) => {
-    if (err) {
-      console.log(err, sql);
-      exit(1);
-    }
-  });
+      repQuestMark(values.length) +
+      ');',
+    values,
+  );
   if (prodId !== undefined) {
-    db.run(
-      'INSERT INTO groups (prod,group_) VALUES(?,?);',
-      [prodId, Number(group.id)],
-      (err) => {
-        if (err) {
-          console.log(err, sql);
-          exit(1);
-        }
-      },
-    );
+    db.run('INSERT INTO groups (prod,group_) VALUES(?,?);', [
+      prodId,
+      Number(group.id),
+    ]);
   }
 }
 
@@ -434,27 +383,14 @@ function insertPlatform(
   prodId?: number,
 ) {
   const values: any[] = [id, platform.name, platform.icon, platform.slug];
-  const sql =
+  db.run(
     'INSERT OR IGNORE INTO platform (id,name,icon,slug) VALUES(' +
-    repQuestMark(values.length) +
-    ');';
-  db.run(sql, values, (err) => {
-    if (err) {
-      console.log(err, sql);
-      exit(1);
-    }
-  });
+      repQuestMark(values.length) +
+      ');',
+    values,
+  );
   if (prodId !== undefined) {
-    db.run(
-      'INSERT INTO platforms (prod,platform) VALUES(?,?);',
-      [prodId, id],
-      (err) => {
-        if (err) {
-          console.log(err, sql);
-          exit(1);
-        }
-      },
-    );
+    db.run('INSERT INTO platforms (prod,platform) VALUES(?,?);', [prodId, id]);
   }
 }
 
@@ -467,16 +403,12 @@ function insertUser(db: sqlite3.Database, user: User) {
     user.glops,
     user.registerDate,
   ];
-  const sql =
+  db.run(
     'INSERT OR IGNORE INTO user (id,nickname,level,avatar,glops,registerDate) VALUES(' +
-    repQuestMark(values.length) +
-    ');';
-  db.run(sql, values, (err) => {
-    if (err) {
-      console.log(err, sql);
-      exit(1);
-    }
-  });
+      repQuestMark(values.length) +
+      ');',
+    values,
+  );
 }
 
 function insertTables(db: sqlite3.Database): Observable<any> {
@@ -509,7 +441,23 @@ function createDatabase(): Observable<sqlite3.Database> {
   });
 }
 
-function runQueries(db: sqlite3.Database, sql: string) {}
+function runQueries(db: sqlite3.Database, sql: string): Observable<any[]> {
+  return new Observable<any[]>((subscribe) => {
+    db.serialize(() => {
+      const rows: any[] = [];
+      db.each(
+        sql,
+        (err: Error | null, row: any) => {
+          rows.push(row);
+        },
+        (err: Error | null, count: number) => {
+          subscribe.next(rows);
+          subscribe.complete();
+        },
+      );
+    });
+  });
+}
 
 export default class Pouet {
   static getLatest(config: Config = { cache: true }): Observable<Dumps> {
@@ -647,9 +595,10 @@ export default class Pouet {
           fs.unlinkSync(DB_FILE_NAME);
         }
         createDatabase().subscribe((db) => {
-          runQueries(db, sql);
-          subscribe.next([]);
-          subscribe.complete();
+          runQueries(db, sql).subscribe((result) => {
+            subscribe.next(result);
+            subscribe.complete();
+          });
         });
         return;
       }

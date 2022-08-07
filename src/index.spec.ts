@@ -41,16 +41,16 @@ const JSON_DATA = {
   },
 };
 
+const removeFiles = () => {
+  pouetDatadDmpFiles.forEach((file) => {
+    if (fs.existsSync(file)) {
+      fs.unlinkSync(file);
+    }
+  });
+};
+
 describe('Pouet.getLatest', () => {
   let mockAxios: MockAdapter;
-
-  const removeFiles = () => {
-    pouetDatadDmpFiles.forEach((file) => {
-      if (fs.existsSync(file)) {
-        fs.unlinkSync(file);
-      }
-    });
-  };
 
   beforeEach(() => {
     mockAxios = new MockAdapter(axios);
@@ -150,46 +150,6 @@ describe('Pouet.getLatest', () => {
     });
   });
 
-  it(POUET_NET_JSON + ' 200 with valid data - from cache', (done) => {
-    removeFiles();
-    mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
-    const OLD_JSON = 'pouetdatadump-old.json';
-    fs.writeFileSync(OLD_JSON, '');
-
-    const mock = (url: string) => {
-      mockAxios.onGet(url).reply(200, fs.readFileSync('./testdata/' + url));
-      const name = gz2Json(url);
-      fs.copyFileSync('./testdata/' + name, name);
-    };
-    mock(JSON_DATA.latest.prods.url);
-    mock(JSON_DATA.latest.groups.url);
-    mock(JSON_DATA.latest.parties.url);
-    mock(JSON_DATA.latest.boards.url);
-
-    Pouet.getLatest().subscribe({
-      next: (dumps: Dumps) => {
-        expect(dumps.prods.data.length).toEqual(1);
-        expect(dumps.groups.data.length).toEqual(1);
-        expect(dumps.parties.data.length).toEqual(1);
-        expect(dumps.boards.data.length).toEqual(1);
-
-        expect(dumps.prods.data[0].name).toEqual('Astral Blur - from cache');
-        expect(dumps.groups.data[0].name).toEqual(
-          'The Black Lotus - from cache',
-        );
-        expect(dumps.parties.data[0].name).toEqual('2-Thousand - from cache');
-        expect(dumps.boards.data[0].name).toEqual('X-Temple - from cache');
-
-        expect(fs.existsSync(OLD_JSON)).toBeFalsy();
-
-        done();
-      },
-      error: (err) => {
-        throw new Error(err);
-      },
-    });
-  });
-
   it(POUET_NET_JSON + ' 200 with valid data - undef gz data', (done) => {
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
 
@@ -219,5 +179,44 @@ describe('Pouet.genCSV', () => {
       expect(fs.existsSync('out.csv')).toBeTruthy();
       done();
     });
+  });
+});
+
+describe('Pouet.sqlQuery', () => {
+  let mockAxios: MockAdapter;
+
+  beforeEach(() => {
+    mockAxios = new MockAdapter(axios);
+  });
+
+  afterEach(() => {
+    mockAxios.reset();
+  });
+
+  it('sqlQuery', (done) => {
+    removeFiles();
+    mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
+
+    const mock = (url: string) => {
+      mockAxios.onGet(url).reply(200, fs.readFileSync('./testdata/' + url));
+    };
+
+    mock(JSON_DATA.latest.prods.url);
+    mock(JSON_DATA.latest.groups.url);
+    mock(JSON_DATA.latest.parties.url);
+    mock(JSON_DATA.latest.boards.url);
+
+    Pouet.sqlQuery('SELECT * FROM platform;', { cache: false }).subscribe(
+      (result) => {
+        expect(result.length).toEqual(4);
+        expect(result.map((value) => value.name).sort()).toEqual([
+          'BeOS',
+          'Linux',
+          'MS-Dos',
+          'Windows',
+        ]);
+        done();
+      },
+    );
   });
 });
