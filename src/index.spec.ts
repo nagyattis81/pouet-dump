@@ -2,19 +2,9 @@ import axios, { AxiosError } from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import Pouet from '.';
 import * as fs from 'fs';
-import { Dumps } from './interfaces';
-
-const POUET_NET_JSON = 'https://data.pouet.net/json.php';
-
-const pouetDatadDmpFiles = fs
-  .readdirSync('.')
-  .filter(
-    (filter) => filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
-  );
-
-function gz2Json(gz: string): string {
-  return gz.split('.')[0] + '.json';
-}
+import { Dumps } from './models';
+import { pouetDatadDmpFiles } from './tools';
+import { POUET_NET_JSON } from './constants';
 
 const JSON_DATA = {
   latest: {
@@ -206,17 +196,24 @@ describe('Pouet.sqlQuery', () => {
     mock(JSON_DATA.latest.parties.url);
     mock(JSON_DATA.latest.boards.url);
 
-    Pouet.sqlQuery('SELECT * FROM platform;', { cache: false }).subscribe(
-      (result) => {
-        expect(result.length).toEqual(4);
-        expect(result.map((value) => value.name).sort()).toEqual([
-          'BeOS',
-          'Linux',
-          'MS-Dos',
-          'Windows',
-        ]);
-        done();
-      },
-    );
+    const titles: string[] = [];
+
+    Pouet.sqlQuery('SELECT * FROM platform;', (title: string) => {
+      titles.push(title);
+    }).subscribe((result) => {
+      expect(result.length).toEqual(4);
+      expect(result.map((value) => value.name).sort()).toEqual([
+        'BeOS',
+        'Linux',
+        'MS-Dos',
+        'Windows',
+      ]);
+      expect(titles.sort()).toEqual([
+        'Open pouet.db',
+        'Start query',
+        'Stop query',
+      ]);
+      done();
+    });
   });
 });
