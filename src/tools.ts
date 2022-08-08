@@ -4,12 +4,14 @@ import { Info } from './interfaces';
 import { Board, Dump, Dumps, Prod, User } from './models';
 import { Observable, Subscriber } from 'rxjs';
 
-export const pouetDatadDmpFiles = fs
-  .readdirSync('.')
-  .filter(
-    (filter) => filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
-  );
-
+export function pouetDatadDmpFiles(): string[] {
+  return fs
+    .readdirSync('.')
+    .filter(
+      (filter) =>
+        filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
+    );
+}
 export function gz2Json(gz: string): string {
   return gz.split('.')[0] + '.json';
 }
@@ -111,11 +113,13 @@ export function getLocale(latest: Dumps): Dumps | undefined {
   const partiesFilename = gz2Json(latest.parties.filename);
   const boardsFilename = gz2Json(latest.boards.filename);
 
+  const files = pouetDatadDmpFiles();
+
   if (
-    pouetDatadDmpFiles.find((find) => find === prodsFilename) &&
-    pouetDatadDmpFiles.find((find) => find === groupsFilename) &&
-    pouetDatadDmpFiles.find((find) => find === partiesFilename) &&
-    pouetDatadDmpFiles.find((find) => find === boardsFilename) &&
+    files.find((find) => find === prodsFilename) &&
+    files.find((find) => find === groupsFilename) &&
+    files.find((find) => find === partiesFilename) &&
+    files.find((find) => find === boardsFilename) &&
     fs.existsSync(prodsFilename) &&
     fs.existsSync(groupsFilename) &&
     fs.existsSync(partiesFilename) &&

@@ -10,7 +10,7 @@ import { createJson } from './data.spec';
 const JSON_DATA = createJson();
 
 const removeFiles = () => {
-  pouetDatadDmpFiles.forEach((file) => {
+  pouetDatadDmpFiles().forEach((file) => {
     if (fs.existsSync(file)) {
       fs.unlinkSync(file);
     }
