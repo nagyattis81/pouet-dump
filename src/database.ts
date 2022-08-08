@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as sqlite3 from 'sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Observable } from 'rxjs';
+import { Observable, Subscriber } from 'rxjs';
 import Pouet from '.';
 import {
   insertBoard,
@@ -159,5 +159,18 @@ export function checkVersion(): Observable<boolean> {
         });
       },
     );
+  });
+}
+
+export function createAndRunDatabase(
+  sql: string,
+  subscriber: Subscriber<any[]>,
+  progress?: (title: string) => void,
+) {
+  createDatabase(progress).subscribe((db) => {
+    runQueries(db, sql, progress).subscribe((result) => {
+      subscriber.next(result);
+      subscriber.complete();
+    });
   });
 }

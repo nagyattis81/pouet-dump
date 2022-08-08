@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as zlib from 'zlib';
 import { Info } from './interfaces';
 import { Board, Dump, Dumps, Prod, User } from './models';
-import { Observable } from 'rxjs';
+import { Observable, Subscriber } from 'rxjs';
 
 export const pouetDatadDmpFiles = fs
   .readdirSync('.')
@@ -130,4 +130,36 @@ export function getLocale(latest: Dumps): Dumps | undefined {
     return locale;
   }
   return undefined;
+}
+
+export function removeFiles(
+  latest: Dumps,
+  subscriber: Subscriber<Dumps>,
+): boolean {
+  const files = fs
+    .readdirSync('.')
+    .filter(
+      (filter) =>
+        filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
+    );
+  const removeFile = (file: string) => {
+    const index = files.indexOf(gz2Json(file), 0);
+    if (index > -1) {
+      files.splice(index, 1);
+    }
+  };
+  removeFile(latest.prods.filename);
+  removeFile(latest.parties.filename);
+  removeFile(latest.groups.filename);
+  removeFile(latest.boards.filename);
+  files.forEach((file) => {
+    fs.unlinkSync(file);
+  });
+  const locale = getLocale(latest);
+  if (locale) {
+    subscriber.next(locale);
+    subscriber.complete();
+    return true;
+  }
+  return false;
 }

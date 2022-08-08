@@ -46,8 +46,7 @@ CREATE TABLE
     addedDate VARCHAR,
     csdb VARCHAR,
     zxdemo VARCHAR,
-    demozoo VARCHAR,
-    UNIQUE (id)
+    demozoo VARCHAR
   );
 
 CREATE INDEX group_id_idx ON group_ (id);
@@ -63,8 +62,7 @@ CREATE TABLE
     name VARCHAR,
     web VARCHAR,
     addedDate VARCHAR,
-    addedUser VARCHAR,
-    UNIQUE (id)
+    addedUser VARCHAR
   );
 
 CREATE INDEX party_id_idx ON party (id);
@@ -86,8 +84,7 @@ CREATE TABLE
     id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     icon VARCHAR,
-    slug VARCHAR,
-    UNIQUE (id)
+    slug VARCHAR
   );
 
 CREATE INDEX platform_id_idx ON platform (id);
@@ -143,8 +140,7 @@ CREATE TABLE
     level VARCHAR,
     avatar VARCHAR,
     glops INT,
-    registerDate VARCHAR,
-    UNIQUE (id)
+    registerDate VARCHAR
   );
 
 CREATE INDEX user_id_idx ON user (id);

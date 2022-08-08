@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import { Prod, Dumps, Party, Group, Board } from './models';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, Subscriber } from 'rxjs';
 import * as fs from 'fs';
 import * as sqlite3 from 'sqlite3';
 import { ConfigGetLatest, Json } from './interfaces';
@@ -10,9 +10,15 @@ import {
   getLocale,
   gunzipJson,
   gz2Json,
+  removeFiles,
   setData,
 } from './tools';
-import { checkVersion, createDatabase, runQueries } from './database';
+import {
+  checkVersion,
+  createAndRunDatabase,
+  createDatabase,
+  runQueries,
+} from './database';
 
 export * from './models';
 
@@ -20,7 +26,7 @@ export default class Pouet {
   static getLatest(
     config: ConfigGetLatest = { cache: true },
   ): Observable<Dumps> {
-    return new Observable<Dumps>((subscribe) => {
+    return new Observable<Dumps>((subscriber: Subscriber<Dumps>) => {
       axios
         .get<Json>(POUET_NET_JSON)
         .then((value) => {
@@ -36,38 +42,13 @@ export default class Pouet {
               users: {},
             };
           } catch (err) {
-            subscribe.error(err);
-            subscribe.complete();
+            subscriber.error(err);
+            subscriber.complete();
             return;
           }
 
-          if (config.cache === true) {
-            const files = fs
-              .readdirSync('.')
-              .filter(
-                (filter) =>
-                  filter.startsWith('pouetdatadump-') &&
-                  filter.endsWith('.json'),
-              );
-            const removeFile = (file: string) => {
-              const index = files.indexOf(gz2Json(file), 0);
-              if (index > -1) {
-                files.splice(index, 1);
-              }
-            };
-            removeFile(latest.prods.filename);
-            removeFile(latest.parties.filename);
-            removeFile(latest.groups.filename);
-            removeFile(latest.boards.filename);
-            files.forEach((file) => {
-              fs.unlinkSync(file);
-            });
-            const locale = getLocale(latest);
-            if (locale) {
-              subscribe.next(locale);
-              subscribe.complete();
-              return;
-            }
+          if (config.cache === true && removeFiles(latest, subscriber)) {
+            return;
           }
 
           axios
@@ -105,24 +86,24 @@ export default class Pouet {
                       groupsData,
                       boardsData,
                     );
-                    subscribe.next(latest);
-                    subscribe.complete();
+                    subscriber.next(latest);
+                    subscriber.complete();
                   },
                   error: (err: any) => {
-                    subscribe.error(err);
-                    subscribe.complete();
+                    subscriber.error(err);
+                    subscriber.complete();
                   },
                 });
               }),
             )
             .catch((res) => {
-              subscribe.error(res);
-              subscribe.complete();
+              subscriber.error(res);
+              subscriber.complete();
             });
         })
         .catch((err: AxiosError) => {
-          subscribe.error(err);
-          subscribe.complete();
+          subscriber.error(err);
+          subscriber.complete();
         });
     });
   }
@@ -148,7 +129,7 @@ export default class Pouet {
     sql: string,
     progress?: (title: string) => void,
   ): Observable<any[]> {
-    return new Observable<any[]>((subscribe) => {
+    return new Observable<any[]>((subscriber: Subscriber<any[]>) => {
       if (fs.existsSync(DB_FILE_NAME)) {
         checkVersion().subscribe((currentVersion) => {
           if (currentVersion) {
@@ -158,31 +139,21 @@ export default class Pouet {
             const db = new sqlite3.Database(
               DB_FILE_NAME,
               sqlite3.OPEN_READWRITE,
-              (err) => {
+              (_) => {
                 runQueries(db, sql, progress).subscribe((result) => {
-                  subscribe.next(result);
-                  subscribe.complete();
+                  subscriber.next(result);
+                  subscriber.complete();
                 });
               },
             );
           } else {
             fs.unlinkSync(DB_FILE_NAME);
-            createDatabase(progress).subscribe((db) => {
-              runQueries(db, sql, progress).subscribe((result) => {
-                subscribe.next(result);
-                subscribe.complete();
-              });
-            });
+            createAndRunDatabase(sql, subscriber, progress);
           }
         });
         return;
       }
-      createDatabase(progress).subscribe((db) => {
-        runQueries(db, sql, progress).subscribe((result) => {
-          subscribe.next(result);
-          subscribe.complete();
-        });
-      });
+      createAndRunDatabase(sql, subscriber, progress);
     });
   }
 }

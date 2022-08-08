@@ -131,7 +131,10 @@ export function insertProd(db: sqlite3.Database, prod: Prod) {
   });
 }
 
-export function insertParty(db: sqlite3.Database, party: Party) {
+export function insertParty(
+  db: sqlite3.Database,
+  party: Party | undefined | null,
+) {
   if (!party) {
     return;
   }
