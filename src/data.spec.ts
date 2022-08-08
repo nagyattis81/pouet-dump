@@ -1,4 +1,6 @@
-import { Party, Prod, User } from './models';
+import { Json } from './interfaces';
+import { Dumps, Party, Prod, User, Board, Group } from './models';
+import { createDumpFromInfo } from './tools';
 
 export function createUser(id: string): User {
   return {
@@ -240,6 +242,46 @@ export function createPlacingsResult(): any[] {
       year: 0,
     },
   ];
+}
+
+export function createJson(): Json {
+  return {
+    dumps: null,
+    latest: {
+      prods: {
+        filename: 'pouetdatadump-prods-99991231.json.gz',
+        url: 'pouetdatadump-prods-99991231.json.gz',
+        size_in_bytes: 0,
+      },
+      parties: {
+        filename: 'pouetdatadump-parties-99991231.json.gz',
+        url: 'pouetdatadump-parties-99991231.json.gz',
+        size_in_bytes: 0,
+      },
+      groups: {
+        filename: 'pouetdatadump-groups-99991231.json.gz',
+        url: 'pouetdatadump-groups-99991231.json.gz',
+        size_in_bytes: 0,
+      },
+      boards: {
+        filename: 'pouetdatadump-boards-99991231.json.gz',
+        url: 'pouetdatadump-boards-99991231.json.gz',
+        size_in_bytes: 0,
+      },
+    },
+  };
+}
+
+export function createDumps(): Dumps {
+  const json = createJson();
+  return {
+    prods: createDumpFromInfo<Prod>(json.latest.prods),
+    parties: createDumpFromInfo<Party>(json.latest.parties),
+    groups: createDumpFromInfo<Group>(json.latest.groups),
+    boards: createDumpFromInfo<Board>(json.latest.boards),
+    platforms: {},
+    users: {},
+  };
 }
 
 describe('data.spec.ts', () => {

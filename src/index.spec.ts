@@ -5,31 +5,9 @@ import * as fs from 'fs';
 import { Dumps } from './models';
 import { pouetDatadDmpFiles } from './tools';
 import { POUET_NET_JSON } from './constants';
+import { createJson } from './data.spec';
 
-const JSON_DATA = {
-  latest: {
-    prods: {
-      filename: 'pouetdatadump-prods-99991231.json.gz',
-      url: 'pouetdatadump-prods-99991231.json.gz',
-      size_in_bytes: 0,
-    },
-    parties: {
-      filename: 'pouetdatadump-parties-99991231.json.gz',
-      url: 'pouetdatadump-parties-99991231.json.gz',
-      size_in_bytes: 0,
-    },
-    groups: {
-      filename: 'pouetdatadump-groups-99991231.json.gz',
-      url: 'pouetdatadump-groups-99991231.json.gz',
-      size_in_bytes: 0,
-    },
-    boards: {
-      filename: 'pouetdatadump-boards-99991231.json.gz',
-      url: 'pouetdatadump-boards-99991231.json.gz',
-      size_in_bytes: 0,
-    },
-  },
-};
+const JSON_DATA = createJson();
 
 const removeFiles = () => {
   pouetDatadDmpFiles.forEach((file) => {

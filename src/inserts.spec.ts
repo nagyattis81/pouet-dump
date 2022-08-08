@@ -16,7 +16,6 @@ import {
 } from './data.spec';
 import { createTables } from './database';
 import { insertBoard, insertParty, insertProd, insertUser } from './inserts';
-import { Party } from './models';
 
 describe('inserts.ts', () => {
   let db!: sqlite3.Database;

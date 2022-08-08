@@ -5,20 +5,8 @@ import * as fs from 'fs';
 import * as sqlite3 from 'sqlite3';
 import { ConfigGetLatest, Json } from './interfaces';
 import { DB_FILE_NAME, POUET_NET_JSON } from './constants';
-import {
-  createDumpFromInfo,
-  getLocale,
-  gunzipJson,
-  gz2Json,
-  removeFiles,
-  setData,
-} from './tools';
-import {
-  checkVersion,
-  createAndRunDatabase,
-  createDatabase,
-  runQueries,
-} from './database';
+import { createDumpFromInfo, gunzipJson, removeFiles, setData } from './tools';
+import { checkVersion, createAndRunDatabase, runQueries } from './database';
 
 export * from './models';
 

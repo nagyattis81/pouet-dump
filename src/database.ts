@@ -77,13 +77,14 @@ export function insertTables(
 }
 
 export function createDatabase(
+  filename: string = DB_FILE_NAME,
   progress?: (title: string) => void,
 ): Observable<sqlite3.Database> {
   if (progress) {
-    progress('Create database ' + DB_FILE_NAME);
+    progress('Create database ' + filename);
   }
   return new Observable<sqlite3.Database>((subscribe) => {
-    const db = new sqlite3.Database(DB_FILE_NAME, (err) => {
+    const db = new sqlite3.Database(filename, (err) => {
       if (progress) {
         progress('Create tables');
       }
@@ -167,7 +168,7 @@ export function createAndRunDatabase(
   subscriber: Subscriber<any[]>,
   progress?: (title: string) => void,
 ) {
-  createDatabase(progress).subscribe((db) => {
+  createDatabase(DB_FILE_NAME, progress).subscribe((db) => {
     runQueries(db, sql, progress).subscribe((result) => {
       subscriber.next(result);
       subscriber.complete();
