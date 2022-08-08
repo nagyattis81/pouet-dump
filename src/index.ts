@@ -425,6 +425,22 @@ function insertTables(
       }
       db.serialize(() => {
         db.run('BEGIN TRANSACTION;');
+        db.run('INSERT INTO version (name, value) VALUES(?,?);', [
+          'prods',
+          dumps.prods.filename,
+        ]);
+        db.run('INSERT INTO version (name, value) VALUES(?,?);', [
+          'groups',
+          dumps.groups.filename,
+        ]);
+        db.run('INSERT INTO version (name, value) VALUES(?,?);', [
+          'parties',
+          dumps.parties.filename,
+        ]);
+        db.run('INSERT INTO version (name, value) VALUES(?,?);', [
+          'boards',
+          dumps.boards.filename,
+        ]);
         dumps.parties.data.forEach((party) => insertParty(db, party));
         dumps.boards.data.forEach((board) => insertBoard(db, board));
         dumps.groups.data.forEach((group) => insertGroup(db, group));
@@ -445,7 +461,7 @@ function createDatabase(
   progress?: (title: string) => void,
 ): Observable<sqlite3.Database> {
   if (progress) {
-    progress('Create database');
+    progress('Create database ' + DB_FILE_NAME);
   }
   return new Observable<sqlite3.Database>((subscribe) => {
     const db = new sqlite3.Database(DB_FILE_NAME, (err) => {
@@ -493,6 +509,37 @@ function runQueries(
         },
       );
     });
+  });
+}
+
+function checkVersion(): Observable<boolean> {
+  return new Observable<boolean>((subscribe) => {
+    const db = new sqlite3.Database(
+      DB_FILE_NAME,
+      sqlite3.OPEN_READWRITE,
+      (err) => {
+        db.serialize(() => {
+          axios.get<Json>(POUET_NET_JSON).then((result) => {
+            db.serialize(() => {
+              db.all(
+                `
+                SELECT * 
+                FROM version
+                WHERE name='prods' AND value = ?
+                `,
+                [result.data.latest.prods.filename],
+                (err: Error | null, rows: any[]) => {
+                  db.close(() => {
+                    subscribe.next(rows.length > 0);
+                    subscribe.complete();
+                  });
+                },
+              );
+            });
+          });
+        });
+      },
+    );
   });
 }
 
@@ -628,23 +675,32 @@ export default class Pouet {
   ): Observable<any[]> {
     return new Observable<any[]>((subscribe) => {
       if (fs.existsSync(DB_FILE_NAME)) {
-        if (progress) {
-          progress('Open ' + DB_FILE_NAME);
-        }
-        const db = new sqlite3.Database(
-          DB_FILE_NAME,
-          sqlite3.OPEN_READWRITE,
-          (err) => {
-            runQueries(db, sql, progress).subscribe((result) => {
-              subscribe.next(result);
-              subscribe.complete();
+        checkVersion().subscribe((currentVersion) => {
+          if (currentVersion) {
+            if (progress) {
+              progress('Open ' + DB_FILE_NAME);
+            }
+            const db = new sqlite3.Database(
+              DB_FILE_NAME,
+              sqlite3.OPEN_READWRITE,
+              (err) => {
+                runQueries(db, sql, progress).subscribe((result) => {
+                  subscribe.next(result);
+                  subscribe.complete();
+                });
+              },
+            );
+          } else {
+            fs.unlinkSync(DB_FILE_NAME);
+            createDatabase(progress).subscribe((db) => {
+              runQueries(db, sql, progress).subscribe((result) => {
+                subscribe.next(result);
+                subscribe.complete();
+              });
             });
-          },
-        );
+          }
+        });
         return;
-      }
-      if (progress) {
-        progress('Create ' + DB_FILE_NAME);
       }
       createDatabase(progress).subscribe((db) => {
         runQueries(db, sql, progress).subscribe((result) => {

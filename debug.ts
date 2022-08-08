@@ -8,6 +8,7 @@ INNER JOIN credits       as C ON C.prod = P.id
 INNER JOIN user          as U ON U.id   = C.user
 WHERE U.nickname LIKE 'aha'
 ORDER BY P.voteup DESC
+LIMIT 10
 ;
 `,
   (title: string) => {

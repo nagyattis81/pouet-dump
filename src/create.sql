@@ -1,4 +1,7 @@
 CREATE TABLE
+  IF NOT EXISTS version (name VARCHAR, value VARCHAR);
+
+CREATE TABLE
   IF NOT EXISTS awards (
     id INT UNIQUE PRIMARY KEY,
     prodID INT,
