@@ -140,12 +140,7 @@ export function removeFiles(
   latest: Dumps,
   subscriber: Subscriber<Dumps>,
 ): boolean {
-  const files = fs
-    .readdirSync('.')
-    .filter(
-      (filter) =>
-        filter.startsWith('pouetdatadump-') && filter.endsWith('.json'),
-    );
+  const files = pouetDatadDmpFiles();
   const removeFile = (file: string) => {
     const index = files.indexOf(gz2Json(file), 0);
     if (index > -1) {
