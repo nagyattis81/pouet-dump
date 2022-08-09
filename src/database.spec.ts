@@ -5,11 +5,14 @@ import axios from 'axios';
 import { POUET_NET_JSON } from './constants';
 import * as fs from 'fs';
 import { createJson } from './data.spec';
+import * as mockFs from 'mock-fs';
 
-describe('database.ts', () => {
+describe.skip('database.ts', () => {
   let db!: sqlite3.Database;
   let mockAxios: MockAdapter;
   beforeEach(() => {
+    mockFs({});
+
     mockAxios = new MockAdapter(axios);
     const JSON_DATA = createJson();
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
@@ -26,6 +29,7 @@ describe('database.ts', () => {
 
   afterEach(() => {
     mockAxios.reset();
+    mockFs.restore();
   });
 
   it('createDatabase', (done) => {

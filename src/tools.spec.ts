@@ -1,4 +1,4 @@
-import { createDumps } from './data.spec';
+import { copyJsonFiles, createDumps } from './data.spec';
 import { removeFiles } from './tools';
 import { Observable } from 'rxjs';
 import { Dumps } from './models';
@@ -9,23 +9,6 @@ describe('tools.ts', () => {
   afterEach(() => {
     mockFs.restore();
   });
-
-  function copyFiles(): any {
-    return {
-      'pouetdatadump-prods-99991231.json': mockFs.load(
-        './testdata/pouetdatadump-prods-99991231.json',
-      ),
-      'pouetdatadump-groups-99991231.json': mockFs.load(
-        './testdata/pouetdatadump-groups-99991231.json',
-      ),
-      'pouetdatadump-parties-99991231.json': mockFs.load(
-        './testdata/pouetdatadump-parties-99991231.json',
-      ),
-      'pouetdatadump-boards-99991231.json': mockFs.load(
-        './testdata/pouetdatadump-boards-99991231.json',
-      ),
-    };
-  }
 
   it('removeFiles empty', (done) => {
     new Observable<Dumps>((subscriber) => {
@@ -42,7 +25,7 @@ describe('tools.ts', () => {
   });
 
   it('removeFiles full', (done) => {
-    const files = copyFiles();
+    const files = copyJsonFiles();
     files['pouetdatadump-remove-test.json'] = '{}';
     mockFs(files);
     new Observable<Dumps>((subscriber) => {

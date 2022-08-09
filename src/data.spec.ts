@@ -1,6 +1,7 @@
 import { Json } from './interfaces';
 import { Dumps, Party, Prod, User, Board, Group } from './models';
 import { createDumpFromInfo } from './tools';
+import * as mockFs from 'mock-fs';
 
 export function createUser(id: string): User {
   return {
@@ -281,6 +282,40 @@ export function createDumps(): Dumps {
     boards: createDumpFromInfo<Board>(json.latest.boards),
     platforms: {},
     users: {},
+  };
+}
+
+export function copyJsonFiles(): any {
+  return {
+    'pouetdatadump-prods-99991231.json': mockFs.load(
+      './testdata/pouetdatadump-prods-99991231.json',
+    ),
+    'pouetdatadump-groups-99991231.json': mockFs.load(
+      './testdata/pouetdatadump-groups-99991231.json',
+    ),
+    'pouetdatadump-parties-99991231.json': mockFs.load(
+      './testdata/pouetdatadump-parties-99991231.json',
+    ),
+    'pouetdatadump-boards-99991231.json': mockFs.load(
+      './testdata/pouetdatadump-boards-99991231.json',
+    ),
+  };
+}
+
+export function copyGzFiles(): any {
+  return {
+    'pouetdatadump-prods-99991231.json.gz': mockFs.load(
+      './testdata/pouetdatadump-prods-99991231.json.gz',
+    ),
+    'pouetdatadump-groups-99991231.json.gz': mockFs.load(
+      './testdata/pouetdatadump-groups-99991231.json.gz',
+    ),
+    'pouetdatadump-parties-99991231.json.gz': mockFs.load(
+      './testdata/pouetdatadump-parties-99991231.json.gz',
+    ),
+    'pouetdatadump-boards-99991231.json.gz': mockFs.load(
+      './testdata/pouetdatadump-boards-99991231.json.gz',
+    ),
   };
 }
 
