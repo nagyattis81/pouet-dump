@@ -6,6 +6,8 @@ import { Dumps } from './models';
 import { pouetDatadDmpFiles } from './tools';
 import { POUET_NET_JSON } from './constants';
 import { createJson } from './data.spec';
+import * as mockFs from 'mock-fs';
+import * as path from 'path';
 
 const JSON_DATA = createJson();
 
@@ -22,10 +24,39 @@ describe('Pouet.getLatest', () => {
 
   beforeEach(() => {
     mockAxios = new MockAdapter(axios);
+    mockFs({
+      testdata: {
+        'pouetdatadump-prods-99991231.json.gz': mockFs.load(
+          path.resolve(
+            __dirname,
+            './../testdata/pouetdatadump-prods-99991231.json.gz',
+          ),
+        ),
+        'pouetdatadump-groups-99991231.json.gz': mockFs.load(
+          path.resolve(
+            __dirname,
+            './../testdata/pouetdatadump-groups-99991231.json.gz',
+          ),
+        ),
+        'pouetdatadump-parties-99991231.json.gz': mockFs.load(
+          path.resolve(
+            __dirname,
+            './../testdata/pouetdatadump-parties-99991231.json.gz',
+          ),
+        ),
+        'pouetdatadump-boards-99991231.json.gz': mockFs.load(
+          path.resolve(
+            __dirname,
+            './../testdata/pouetdatadump-boards-99991231.json.gz',
+          ),
+        ),
+      },
+    });
   });
 
   afterEach(() => {
     mockAxios.reset();
+    mockFs.restore();
   });
 
   it(POUET_NET_JSON + ' 400', (done) => {
