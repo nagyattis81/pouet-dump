@@ -38,7 +38,7 @@ export function insertTables(
     progress('Get latest');
   }
   return new Observable<any>((subscribe) => {
-    Pouet.getLatest({ cache: false }).subscribe((dumps) => {
+    Pouet.getLatest().subscribe((dumps) => {
       if (progress) {
         progress('Start transaction');
       }
@@ -132,34 +132,32 @@ export function runQueries(
   });
 }
 
-export function checkVersion(): Observable<boolean> {
+export function checkVersion(
+  fileName: string = DB_FILE_NAME,
+): Observable<boolean> {
   return new Observable<boolean>((subscribe) => {
-    const db = new sqlite3.Database(
-      DB_FILE_NAME,
-      sqlite3.OPEN_READWRITE,
-      (err) => {
-        db.serialize(() => {
-          axios.get<Json>(POUET_NET_JSON).then((result) => {
-            db.serialize(() => {
-              db.all(
-                `
+    const db = new sqlite3.Database(fileName, sqlite3.OPEN_READWRITE, (err) => {
+      db.serialize(() => {
+        axios.get<Json>(POUET_NET_JSON).then((result) => {
+          db.serialize(() => {
+            db.all(
+              `
                   SELECT * 
                   FROM version
                   WHERE name='prods' AND value = ?
                   `,
-                [result.data.latest.prods.filename],
-                (_: Error | null, rows: any[]) => {
-                  db.close(() => {
-                    subscribe.next(rows.length > 0);
-                    subscribe.complete();
-                  });
-                },
-              );
-            });
+              [result.data.latest.prods.filename],
+              (_: Error | null, rows: any[]) => {
+                db.close(() => {
+                  subscribe.next(rows && rows.length > 0);
+                  subscribe.complete();
+                });
+              },
+            );
           });
         });
-      },
-    );
+      });
+    });
   });
 }
 

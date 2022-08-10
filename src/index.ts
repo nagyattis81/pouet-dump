@@ -3,7 +3,7 @@ import { Prod, Dumps, Party, Group, Board } from './models';
 import { forkJoin, Observable, Subscriber } from 'rxjs';
 import * as fs from 'fs';
 import * as sqlite3 from 'sqlite3';
-import { ConfigGetLatest, Json } from './interfaces';
+import { Json } from './interfaces';
 import { DB_FILE_NAME, POUET_NET_JSON } from './constants';
 import { createDumpFromInfo, gunzipJson, removeFiles, setData } from './tools';
 import { checkVersion, createAndRunDatabase, runQueries } from './database';
@@ -11,9 +11,7 @@ import { checkVersion, createAndRunDatabase, runQueries } from './database';
 export * from './models';
 
 export default class Pouet {
-  static getLatest(
-    config: ConfigGetLatest = { cache: true },
-  ): Observable<Dumps> {
+  static getLatest(): Observable<Dumps> {
     return new Observable<Dumps>((subscriber: Subscriber<Dumps>) => {
       axios
         .get<Json>(POUET_NET_JSON)
@@ -35,7 +33,7 @@ export default class Pouet {
             return;
           }
 
-          if (config.cache === true && removeFiles(latest, subscriber)) {
+          if (removeFiles(latest, subscriber)) {
             return;
           }
 
@@ -57,14 +55,10 @@ export default class Pouet {
             .then(
               axios.spread((prods, parties, groups, boards) => {
                 forkJoin([
-                  gunzipJson(prods.data, latest.prods, config.cache === true),
-                  gunzipJson(
-                    parties.data,
-                    latest.parties,
-                    config.cache === true,
-                  ),
-                  gunzipJson(groups.data, latest.groups, config.cache === true),
-                  gunzipJson(boards.data, latest.boards, config.cache === true),
+                  gunzipJson(prods.data, latest.prods),
+                  gunzipJson(parties.data, latest.parties),
+                  gunzipJson(groups.data, latest.groups),
+                  gunzipJson(boards.data, latest.boards),
                 ]).subscribe({
                   next: ([prodsData, partiesData, groupsData, boardsData]) => {
                     setData(
@@ -136,7 +130,9 @@ export default class Pouet {
               },
             );
           } else {
-            fs.unlinkSync(fileName);
+            if (fs.existsSync(fileName)) {
+              fs.unlinkSync(fileName);
+            }
             createAndRunDatabase(sql, fileName, subscriber, progress);
           }
         });

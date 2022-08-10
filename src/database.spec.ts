@@ -1,4 +1,10 @@
-import { createDatabase, createTables, insertTables } from './database';
+import {
+  checkVersion,
+  createDatabase,
+  createTables,
+  insertTables,
+  runQueries,
+} from './database';
 import * as sqlite3 from 'sqlite3';
 import MockAdapter from 'axios-mock-adapter';
 import axios from 'axios';
@@ -61,6 +67,29 @@ describe('database.ts', () => {
           ]);
           done();
         });
+      });
+    });
+  });
+
+  it('checkVersion', (done) => {
+    createDatabase(':memory:').subscribe((result) => {
+      expect(result).toBeDefined();
+      checkVersion(':memory:').subscribe((result) => {
+        expect(result).toBeFalsy();
+        done();
+      });
+    });
+  });
+
+  it('checkVersion', (done) => {
+    createDatabase(':memory:').subscribe((result) => {
+      expect(result).toBeDefined();
+      runQueries(result, 'CSELET * FORM prod').subscribe({
+        error: (err) => {
+          expect(err.errno).toEqual(1);
+          expect(err.code).toEqual('SQLITE_ERROR');
+          done();
+        },
       });
     });
   });

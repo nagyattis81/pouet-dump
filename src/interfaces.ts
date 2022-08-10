@@ -13,7 +13,3 @@ export interface Json {
     boards: Info;
   };
 }
-
-export interface ConfigGetLatest {
-  cache?: boolean;
-}

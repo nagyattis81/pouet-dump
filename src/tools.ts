@@ -33,7 +33,6 @@ export const createDumpFromInfo = <T>(info: Info): Dump<T> => {
 export function gunzipJson(
   data: any,
   info: Info,
-  cache: boolean,
 ): Observable<{ dump_date: string } | undefined> {
   return new Observable<any | undefined>((subscribe) => {
     if (!data) {
@@ -45,7 +44,7 @@ export function gunzipJson(
       const content = output.toString();
       const obj = JSON.parse(content);
       const name = info.filename.split('.')[0] + '.json';
-      if (cache === true && !fs.existsSync(name)) {
+      if (!fs.existsSync(name)) {
         fs.writeFile(name, content, (err) => {
           subscribe.next(obj);
           subscribe.complete();

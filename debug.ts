@@ -11,9 +11,6 @@ ORDER BY P.voteup DESC
 LIMIT 10
 ;
 `,
-  (title: string) => {
-    console.log(title);
-  },
 ).subscribe((result) => {
   console.table(result);
 });

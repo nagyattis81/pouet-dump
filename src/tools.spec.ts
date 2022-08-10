@@ -10,7 +10,7 @@ describe('tools.ts', () => {
     mockFs.restore();
   });
 
-  it('removeFiles empty', (done) => {
+  it.skip('removeFiles empty', (done) => {
     new Observable<Dumps>((subscriber) => {
       const dumps = createDumps();
       if (removeFiles(dumps, subscriber)) {
