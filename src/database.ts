@@ -165,10 +165,11 @@ export function checkVersion(): Observable<boolean> {
 
 export function createAndRunDatabase(
   sql: string,
+  fileName: string = DB_FILE_NAME,
   subscriber: Subscriber<any[]>,
   progress?: (title: string) => void,
 ) {
-  createDatabase(DB_FILE_NAME, progress).subscribe((db) => {
+  createDatabase(fileName, progress).subscribe((db) => {
     runQueries(db, sql, progress).subscribe((result) => {
       subscriber.next(result);
       subscriber.complete();

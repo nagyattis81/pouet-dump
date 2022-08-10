@@ -3,20 +3,11 @@ import MockAdapter from 'axios-mock-adapter';
 import Pouet from '.';
 import * as fs from 'fs';
 import { Dumps } from './models';
-import { pouetDatadDmpFiles } from './tools';
 import { POUET_NET_JSON } from './constants';
 import { copyGzFiles, createJson } from './data.spec';
 import * as mockFs from 'mock-fs';
 
 const JSON_DATA = createJson();
-
-const removeFiles = () => {
-  pouetDatadDmpFiles().forEach((file) => {
-    if (fs.existsSync(file)) {
-      fs.unlinkSync(file);
-    }
-  });
-};
 
 describe('Pouet.getLatest', () => {
   let mockAxios: MockAdapter;
@@ -67,7 +58,6 @@ describe('Pouet.getLatest', () => {
   });
 
   it(POUET_NET_JSON + ' 200 with valid data', (done) => {
-    removeFiles();
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
 
     const mock = (url: string) => {
@@ -170,6 +160,9 @@ describe('Pouet.sqlQuery', () => {
     mockAxios = new MockAdapter(axios);
     mockFs({
       testdata: copyGzFiles(),
+      src: {
+        'create.sql': mockFs.load('./src/create.sql'),
+      },
     });
   });
 
@@ -178,8 +171,7 @@ describe('Pouet.sqlQuery', () => {
     mockFs.restore();
   });
 
-  it.only('sqlQuery', (done) => {
-    removeFiles();
+  it('sqlQuery', (done) => {
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
 
     const mock = (url: string) => {
@@ -193,7 +185,7 @@ describe('Pouet.sqlQuery', () => {
 
     const titles: string[] = [];
 
-    Pouet.sqlQuery('SELECT * FROM platform;', (title: string) => {
+    Pouet.sqlQuery('SELECT * FROM platform;', ':memory:', (title: string) => {
       titles.push(title);
     }).subscribe((result) => {
       expect(result.length).toEqual(4);
@@ -204,9 +196,14 @@ describe('Pouet.sqlQuery', () => {
         'Windows',
       ]);
       expect(titles.sort()).toEqual([
-        'Open pouet.db',
+        'Create database :memory:',
+        'Create tables',
+        'Get latest',
+        'Insert tables',
         'Start query',
+        'Start transaction',
         'Stop query',
+        'Stop transaction',
       ]);
       done();
     });

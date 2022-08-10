@@ -115,17 +115,18 @@ export default class Pouet {
   }
   static sqlQuery(
     sql: string,
+    fileName: string = DB_FILE_NAME,
     progress?: (title: string) => void,
   ): Observable<any[]> {
     return new Observable<any[]>((subscriber: Subscriber<any[]>) => {
-      if (fs.existsSync(DB_FILE_NAME)) {
+      if (fs.existsSync(fileName)) {
         checkVersion().subscribe((currentVersion) => {
           if (currentVersion) {
             if (progress) {
-              progress('Open ' + DB_FILE_NAME);
+              progress('Open ' + fileName);
             }
             const db = new sqlite3.Database(
-              DB_FILE_NAME,
+              fileName,
               sqlite3.OPEN_READWRITE,
               (_) => {
                 runQueries(db, sql, progress).subscribe((result) => {
@@ -135,13 +136,13 @@ export default class Pouet {
               },
             );
           } else {
-            fs.unlinkSync(DB_FILE_NAME);
-            createAndRunDatabase(sql, subscriber, progress);
+            fs.unlinkSync(fileName);
+            createAndRunDatabase(sql, fileName, subscriber, progress);
           }
         });
         return;
       }
-      createAndRunDatabase(sql, subscriber, progress);
+      createAndRunDatabase(sql, fileName, subscriber, progress);
     });
   }
 }
