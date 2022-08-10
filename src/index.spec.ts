@@ -3,11 +3,9 @@ import MockAdapter from 'axios-mock-adapter';
 import Pouet from '.';
 import * as fs from 'fs';
 import { Dumps } from './models';
-import { POUET_NET_JSON } from './constants';
+import { DB_FILE_NAME, POUET_NET_JSON } from './constants';
 import { copyGzFiles, createJson } from './data.spec';
 import * as mockFs from 'mock-fs';
-
-const JSON_DATA = createJson();
 
 describe('Pouet.getLatest', () => {
   let mockAxios: MockAdapter;
@@ -47,6 +45,7 @@ describe('Pouet.getLatest', () => {
   });
 
   it(POUET_NET_JSON + ' 200 with invalid data', (done) => {
+    const JSON_DATA = createJson();
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
     Pouet.getLatest({ cache: false }).subscribe({
       error: (err: AxiosError) => {
@@ -58,6 +57,7 @@ describe('Pouet.getLatest', () => {
   });
 
   it(POUET_NET_JSON + ' 200 with valid data', (done) => {
+    const JSON_DATA = createJson();
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
 
     const mock = (url: string) => {
@@ -114,6 +114,7 @@ describe('Pouet.getLatest', () => {
   });
 
   it(POUET_NET_JSON + ' 200 with valid data - undef gz data', (done) => {
+    const JSON_DATA = createJson();
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
 
     const mock = (url: string) => {
@@ -134,16 +135,10 @@ describe('Pouet.getLatest', () => {
 });
 
 describe('Pouet.genCSV', () => {
-  beforeEach(() => {
-    mockFs({});
-  });
-
-  afterEach(() => {
-    mockFs.restore();
-  });
-
   it('genCSV', (done) => {
-    fs.unlinkSync('out.csv');
+    if (fs.existsSync('out.csv')) {
+      fs.unlinkSync('out.csv');
+    }
     Pouet.genCSV([], 'out.csv', () => {});
     expect(fs.existsSync('out.csv')).toBeFalsy();
     Pouet.genCSV([{ id: 'id1', title: 'title1' }], 'out.csv', () => {
@@ -158,12 +153,6 @@ describe('Pouet.sqlQuery', () => {
 
   beforeEach(() => {
     mockAxios = new MockAdapter(axios);
-    mockFs({
-      testdata: copyGzFiles(),
-      src: {
-        'create.sql': mockFs.load('./src/create.sql'),
-      },
-    });
   });
 
   afterEach(() => {
@@ -171,7 +160,14 @@ describe('Pouet.sqlQuery', () => {
     mockFs.restore();
   });
 
-  it('sqlQuery', (done) => {
+  it('from web', (done) => {
+    mockFs({
+      testdata: copyGzFiles(),
+      src: {
+        'create.sql': mockFs.load('./src/create.sql'),
+      },
+    });
+    const JSON_DATA = createJson();
     mockAxios.onGet(POUET_NET_JSON).reply(200, JSON_DATA);
 
     const mock = (url: string) => {

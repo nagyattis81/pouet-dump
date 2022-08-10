@@ -4,14 +4,19 @@ import MockAdapter from 'axios-mock-adapter';
 import axios from 'axios';
 import { POUET_NET_JSON } from './constants';
 import * as fs from 'fs';
-import { createJson } from './data.spec';
+import { copyGzFiles, createJson } from './data.spec';
 import * as mockFs from 'mock-fs';
 
-describe.skip('database.ts', () => {
+describe('database.ts', () => {
   let db!: sqlite3.Database;
   let mockAxios: MockAdapter;
   beforeEach(() => {
-    mockFs({});
+    mockFs({
+      testdata: copyGzFiles(),
+      src: {
+        'create.sql': mockFs.load('./src/create.sql'),
+      },
+    });
 
     mockAxios = new MockAdapter(axios);
     const JSON_DATA = createJson();
