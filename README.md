@@ -58,6 +58,21 @@ Pouet.getLatest().subscribe((dumps) => {
     console.log('Write', CSV_FILENAME);
   });
 });
+
+Pouet.sqlQuery(
+  `
+SELECT 'https://www.pouet.net/prod.php?which=' || P.id, P.name, P.voteup, P.party_year
+FROM prod as P
+INNER JOIN credits as C ON C.prod = P.id
+INNER JOIN user as U ON U.id   = C.user
+WHERE U.nickname LIKE 'aha'
+ORDER BY P.voteup DESC
+LIMIT 10
+;
+`,
+).subscribe((result) => {
+  console.table(result);
+});
 ```
 
 ![1]
@@ -195,13 +210,21 @@ export interface Dumps {
 
 ```sql
 CREATE TABLE
-  IF NOT EXISTS awards (id INT, prodID INT, categoryID INT, awardType VARCHAR);
+  IF NOT EXISTS version (name VARCHAR, value VARCHAR);
+
+CREATE TABLE
+  IF NOT EXISTS awards (
+    id INT UNIQUE PRIMARY KEY,
+    prodID INT,
+    categoryID INT,
+    awardType VARCHAR
+  );
 
 CREATE INDEX awards_prodID_idx ON awards (prodID);
 
 CREATE TABLE
   IF NOT EXISTS board (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     addedUser INT,
     sysop VARCHAR,
@@ -225,7 +248,7 @@ CREATE INDEX downloadLinks_prod_idx ON downloadLinks (prod);
 
 CREATE TABLE
   IF NOT EXISTS group_ (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     acronym VARCHAR,
     disambiguation VARCHAR,
@@ -234,8 +257,7 @@ CREATE TABLE
     addedDate VARCHAR,
     csdb VARCHAR,
     zxdemo VARCHAR,
-    demozoo VARCHAR,
-    UNIQUE (id)
+    demozoo VARCHAR
   );
 
 CREATE INDEX group_id_idx ON group_ (id);
@@ -247,12 +269,11 @@ CREATE INDEX groups_prod_idx ON groups (prod);
 
 CREATE TABLE
   IF NOT EXISTS party (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     web VARCHAR,
     addedDate VARCHAR,
-    addedUser VARCHAR,
-    UNIQUE (id)
+    addedUser VARCHAR
   );
 
 CREATE INDEX party_id_idx ON party (id);
@@ -271,11 +292,10 @@ CREATE INDEX placings_prod_idx ON placings (prod);
 
 CREATE TABLE
   IF NOT EXISTS platform (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     name VARCHAR,
     icon VARCHAR,
-    slug VARCHAR,
-    UNIQUE (id)
+    slug VARCHAR
   );
 
 CREATE INDEX platform_id_idx ON platform (id);
@@ -326,13 +346,12 @@ CREATE INDEX types_prod_idx ON types (prod);
 
 CREATE TABLE
   IF NOT EXISTS user (
-    id INT,
+    id INT UNIQUE PRIMARY KEY,
     nickname VARCHAR,
     level VARCHAR,
     avatar VARCHAR,
     glops INT,
-    registerDate VARCHAR,
-    UNIQUE (id)
+    registerDate VARCHAR
   );
 
 CREATE INDEX user_id_idx ON user (id);

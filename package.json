@@ -7,7 +7,7 @@
   "scripts": {
     "test": "jest --config jestconfig.json --runInBand",
     "coverage": "jest --config jestconfig.json --coverage --runInBand",
-    "build": "tsc",
+    "build": "tsc && cp ./src/create.sql ./lib/create.sql",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
