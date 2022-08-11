@@ -1,13 +1,12 @@
 {
-  "name": "query",
+  "name": "pouet",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "bin": "./dist/main.js",
   "scripts": {
     "main": "ts-node src/main.ts",
-    "build": "tsc",
-    "make": "npm run build && npx pkg -t win . --out-path dist"
+    "build": "tsc && npx pkg -t win . --out-path dist"
   },
   "keywords": [],
   "author": "",
