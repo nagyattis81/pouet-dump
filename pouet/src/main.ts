@@ -1,16 +1,15 @@
+import * as args from 'args';
+import * as fs from 'fs';
 import Pouet from '@nagyattis81/pouet-dump';
 
-Pouet.sqlQuery(
-  `
-  SELECT 'https://www.pouet.net/prod.php?which=' || P.id, P.name, P.voteup, P.party_year
-  FROM prod as P
-  INNER JOIN credits as C ON C.prod = P.id
-  INNER JOIN user as U ON U.id   = C.user
-  WHERE U.nickname LIKE 'aha'
-  ORDER BY P.voteup DESC
-  LIMIT 10
-  ;
-  `,
-).subscribe((result) => {
-  console.table(result);
-});
+args.option('sql', 'input query sql file').option('csv', 'output csv file');
+
+const flags = args.parse(process.argv);
+if (flags.sql && flags.csv) {
+  const sql = fs.readFileSync(flags.sql).toString();
+  Pouet.sqlQuery(sql).subscribe((result) => {
+    Pouet.genCSV(result, flags.csv, () => {});
+  });
+} else {
+  args.showHelp();
+}
