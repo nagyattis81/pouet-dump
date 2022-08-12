@@ -19,6 +19,7 @@
   "dependencies": {
     "@nagyattis81/pouet-dump": "^1.6.0",
     "@types/args": "^5.0.0",
-    "args": "^5.0.3"
+    "args": "^5.0.3",
+    "easy-table": "^1.2.0"
   }
 }
