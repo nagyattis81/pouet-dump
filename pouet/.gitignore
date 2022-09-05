@@ -104,4 +104,3 @@ dist
 .tern-port
 pouetdatadump-*.json
 *.csv
-out/
