@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "cd ./.. && npm pack && cd ./example && rm -rf node_modules && rm -f package-lock.json && npm i && npm run query",
-    "query": "ts-node src/query.ts"
+    "query": "ts-node src/query.ts",
+    "function": "ts-node src/function.ts"
   },
   "repository": {
     "type": "git",
