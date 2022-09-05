@@ -1,4 +1,7 @@
-import Pouet, { Prod } from '@nagyattis81/pouet-dump';
+import Pouet from '@nagyattis81/pouet-dump';
+import axios from 'axios';
+import * as fs from 'fs';
+const ProgressBar = require('progress');
 
 Pouet.getLatest().subscribe((dumps) => {
   const FROM_DATE = 2017;
@@ -9,7 +12,7 @@ Pouet.getLatest().subscribe((dumps) => {
   const result = dumps.prods.data
     .filter(
       (filter) =>
-        filter.party_year >= FROM_DATE && filter.party_year >= TO_DATE,
+        filter.party_year >= FROM_DATE && filter.party_year <= TO_DATE,
     )
     .filter((filter) => filter.platforms['68'])
     .filter((filter) => {
@@ -29,6 +32,7 @@ Pouet.getLatest().subscribe((dumps) => {
       return true;
     })
     .filter((filter) => filter.party_place < 4)
+    .filter((filter) => filter.voteup > 20)
     .sort((a, b) => {
       if (a.voteup < b.voteup) {
         return 1;
@@ -40,18 +44,56 @@ Pouet.getLatest().subscribe((dumps) => {
     });
 
   console.log(result.length);
-  result.forEach((prod, index) => {
+  result.forEach(async (prod, index) => {
     // if (index < 10)
     {
-      console.log(
+      /* console.log(
         prod.name,
         prod.voteup,
         prod.voteavg,
         prod.type,
-        prod.types,
         prod.party.name,
+        prod.party_year,
         prod.party_place,
-      );
+        prod.download,
+      ); */
+      let url = prod.download;
+      const PREFIX = 'https://files.scene.org/view/parties';
+      if (url.startsWith(PREFIX)) {
+        url =
+          'https://files.scene.org/get/parties' + url.substring(PREFIX.length);
+      }
+      const fields = url.split('/');
+      const file = fields[fields.length - 1];
+      console.log(url, file);
+      const response = await axios({
+        url,
+        method: 'GET',
+        responseType: 'stream',
+      });
+      {
+        const totalLength = response.headers['content-length'];
+        if (totalLength) {
+          const progressBar = new ProgressBar(
+            'downloading [:bar] :percent :etas ' + url,
+            {
+              width: 40,
+              complete: '=',
+              incomplete: ' ',
+              renderThrottle: 1,
+              total: parseInt(totalLength),
+            },
+          );
+
+          response.data.on('data', (chunk: any) => {
+            progressBar.tick(chunk.length);
+          });
+        }
+        const prefix = String(prod.voteup).padStart(3, '0');
+        response.data.pipe(
+          fs.createWriteStream('./out/' + prefix + '_' + file),
+        );
+      }
     }
   });
 });
