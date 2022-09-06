@@ -54,6 +54,7 @@ function download(prods: Prod[], downloadType: DownloadType) {
 Pouet.getLatest().subscribe((dumps) => {
   const FROM_DATE = 2017;
   const TO_DATE = 2022;
+  const MAX_PROD = 80;
 
   const availTypes = ['4k', '8k', '16k', '32k', '64k', 'demo'];
   const expectTypes = ['procedural graphics'];
@@ -88,6 +89,6 @@ Pouet.getLatest().subscribe((dumps) => {
       }
       return 0;
     })
-    .slice(0, 40);
+    .slice(0, MAX_PROD);
   download(prods, DownloadType.DOWNLOAD);
 });
