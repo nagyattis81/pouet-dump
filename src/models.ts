@@ -54,7 +54,7 @@ export interface User {
   nickname: string;
   level: string;
   avatar: string;
-  glops: number;
+  glops?: number;
   registerDate: string;
 }
 

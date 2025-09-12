@@ -3,6 +3,9 @@ import { Board, Group, Party, Platform, Prod, User } from './models';
 import { repQuestMark } from './tools';
 
 export function insertProd(db: sqlite3.Database, prod: Prod) {
+  if (!prod.addedUser) {
+    return;
+  }
   const valuesProd: any[] = [
     Number(prod.id),
     prod.name,
@@ -19,7 +22,7 @@ export function insertProd(db: sqlite3.Database, prod: Prod) {
     Number(prod.party_place),
     Number(prod.party_year),
     Number(prod.party),
-    Number(prod.addeduser.id),
+    Number(prod?.addeduser?.id ?? 0),
     prod.sceneorg,
     prod.demozoo,
     prod.csdb,
@@ -154,6 +157,9 @@ export function insertParty(
 }
 
 export function insertBoard(db: sqlite3.Database, board: Board) {
+  if (!board.addeduser) {
+    return;
+  }
   const values: any[] = [
     Number(board.id),
     board.name,

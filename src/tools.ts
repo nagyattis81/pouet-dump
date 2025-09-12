@@ -64,8 +64,12 @@ export function setData(
   groupsData: any,
   boardsData: any,
 ) {
+
   const handleUser = (user: User) => {
-    user.glops = Number(user.glops);
+    if (!user) {
+      return;
+    }
+    user.glops = Number(user?.glops ?? 0);
     dumps.users[user.id] = user;
   };
 
